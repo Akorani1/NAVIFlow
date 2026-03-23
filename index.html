@@ -189,6 +189,24 @@
           </div>
         </div>
 
+        <!-- Reply Speed Guard -->
+        <div class="section-header">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"
+              style="vertical-align: -2px; margin-right: 4px; color: var(--ocean);">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Reply Speed Guard
+          </h3>
+          <div class="sg-header-right">
+            <span class="sg-count-badge"><span id="sg-active-count">3</span> active</span>
+            <span class="sg-live-dot"></span>
+          </div>
+        </div>
+        <div class="sg-cards-list" id="sg-cards-list">
+          <!-- populated by JS -->
+        </div>
+
         <!-- Business Performance -->
         <div class="section-header">
           <h3>Business Performance</h3>
@@ -381,6 +399,16 @@
           <button class="pill" data-filter="converted">Converted</button>
           <button class="pill" data-filter="vip">VIP</button>
         </div>
+        <!-- Speed Guard Banner -->
+        <div class="sg-leads-banner" id="sg-leads-banner">
+          <span class="sg-banner-dot sg-dot-warning" id="sg-banner-icon"></span>
+          <span class="sg-banner-text" id="sg-banner-text"><strong>3 leads waiting</strong> for your reply.</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"
+            style="color: var(--gray-400); flex-shrink: 0;">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
+
         <div class="leads-list" id="leads-list">
           <!-- populated by JS -->
         </div>
@@ -1109,6 +1137,137 @@
       </div>
     </section>
 
+    <!-- ======================== RECOVERY ENGINE SCREEN ======================== -->
+    <section id="screen-recovery" class="screen">
+      <div class="screen-scroll">
+        <div class="screen-top-bar">
+          <h2>Recovery Engine</h2>
+          <div class="rec-header-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path
+                d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" />
+            </svg>
+            <span>Live</span>
+          </div>
+        </div>
+
+        <!-- Recovery Hero Card -->
+        <div class="recovery-hero">
+          <div class="recovery-hero-glow"></div>
+          <div class="recovery-hero-content">
+            <div class="recovery-hero-main">
+              <span class="recovery-hero-label">Recovered This Week</span>
+              <span class="rec-stat-value recovery-hero-value" data-rec-val="12450" data-rec-prefix="$">$0</span>
+            </div>
+            <div class="recovery-hero-sub">
+              <div class="recovery-sub-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <div class="recovery-sub-stat-text">
+                  <span class="rec-stat-value" data-rec-val="30000" data-rec-prefix="$">$0</span>
+                  <span class="recovery-sub-label">At Risk</span>
+                </div>
+              </div>
+              <div class="recovery-sub-divider"></div>
+              <div class="recovery-sub-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                <div class="recovery-sub-stat-text">
+                  <span class="rec-stat-value" data-rec-val="27" data-rec-suffix="%">0%</span>
+                  <span class="recovery-sub-label">Recovery Rate</span>
+                </div>
+              </div>
+              <div class="recovery-sub-divider"></div>
+              <div class="recovery-sub-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <div class="recovery-sub-stat-text">
+                  <span class="rec-stat-value" data-rec-val="8" data-rec-prefix="">0</span>
+                  <span class="recovery-sub-label">Pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lost Opportunities -->
+        <div class="section-header">
+          <h3>Lost Opportunities</h3>
+          <span class="ai-badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg> AI Detected</span>
+        </div>
+        <div class="filter-pills recovery-pills">
+          <button class="pill active" data-rec-filter="all">All</button>
+          <button class="pill" data-rec-filter="pending">Pending</button>
+          <button class="pill" data-rec-filter="recovering">Recovering</button>
+          <button class="pill" data-rec-filter="recovered">Recovered</button>
+        </div>
+        <div class="recovery-opps-list" id="recovery-opps-list">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Recovery Trend -->
+        <div class="section-header">
+          <h3>Recovery Trend</h3>
+        </div>
+        <div class="chart-card">
+          <canvas id="chart-recovery" width="360" height="200"></canvas>
+        </div>
+
+        <!-- Active Recovery Campaigns -->
+        <div class="section-header">
+          <h3>Active Recoveries</h3>
+          <span class="rec-active-count">3 running</span>
+        </div>
+        <div class="active-recovery-list">
+          <div class="active-rec-card">
+            <div class="active-rec-indicator pulse-green"></div>
+            <div class="active-rec-info">
+              <h4>Price Discount Campaign</h4>
+              <p>Targeting 12 leads with price hesitation</p>
+            </div>
+            <div class="active-rec-stat">
+              <span class="active-rec-val">3</span>
+              <span class="active-rec-label">Recovered</span>
+            </div>
+          </div>
+          <div class="active-rec-card">
+            <div class="active-rec-indicator pulse-blue"></div>
+            <div class="active-rec-info">
+              <h4>Slot Reservation Follow-up</h4>
+              <p>Re-engaging 8 leads who missed bookings</p>
+            </div>
+            <div class="active-rec-stat">
+              <span class="active-rec-val">1</span>
+              <span class="active-rec-label">Recovered</span>
+            </div>
+          </div>
+          <div class="active-rec-card">
+            <div class="active-rec-indicator pulse-purple"></div>
+            <div class="active-rec-info">
+              <h4>Re-engagement Questions</h4>
+              <p>Asking 5 cold leads why they left</p>
+            </div>
+            <div class="active-rec-stat">
+              <span class="active-rec-val">0</span>
+              <span class="active-rec-label">Recovered</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-spacer"></div>
+      </div>
+    </section>
+
     <!-- ======================== ANALYTICS SCREEN ======================== -->
     <section id="screen-analytics" class="screen">
       <div class="screen-scroll">
@@ -1346,6 +1505,36 @@
       </div>
     </section>
 
+    <!-- ======================== SPEED GUARD ALERT TOAST ======================== -->
+    <div class="sg-alert-toast" id="sg-alert-toast">
+      <div class="sg-alert-inner">
+        <div class="sg-alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </div>
+        <div class="sg-alert-content">
+          <div class="sg-alert-title">You are about to lose a hot lead!</div>
+          <div class="sg-alert-detail">
+            <span id="sg-alert-name">Lead Name</span>
+            <span class="sg-alert-timer-badge" id="sg-alert-timer">5:00</span>
+          </div>
+        </div>
+        <button class="sg-alert-close" id="sg-alert-dismiss">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="sg-alert-actions">
+        <button class="sg-alert-btn sg-alert-btn-reply" id="sg-alert-reply">Reply Now</button>
+        <button class="sg-alert-btn sg-alert-btn-auto" id="sg-alert-auto">AI Auto-Reply</button>
+      </div>
+    </div>
+
     <!-- ======================== BOTTOM NAV ======================== -->
     <nav id="bottom-nav" class="bottom-nav hidden">
       <button class="nav-item active" data-screen="screen-dashboard">
@@ -1373,11 +1562,12 @@
         </svg>
         <span>POS</span>
       </button>
-      <button class="nav-item" data-screen="screen-campaigns">
+      <button class="nav-item" data-screen="screen-recovery">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+          <path
+            d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" />
         </svg>
-        <span>Campaigns</span>
+        <span>Recovery</span>
       </button>
       <button class="nav-item" data-screen="screen-settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

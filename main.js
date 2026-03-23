@@ -35,6 +35,44 @@ const inventoryData = [
     { id: 12, name: 'Protein Bars (12pk)', sku: 'NF-FOOD-003', price: 28.99, stock: 67, maxStock: 100, category: 'food', gradient: 'linear-gradient(135deg, #9ED8C3, #2F6FA3)', icon: 'package' },
 ];
 
+const recoveryData = [
+    { id: 1, name: 'Marcus Webb', initials: 'MW', value: 4500, daysSince: 5, dropReason: 'slow_response', reasonLabel: 'Slow Response', status: 'pending', campaignType: 'slot-save', color: '#ef4444', aiMessage: 'We saved your slot. Want me to book it for you right now?', aiAnalysis: 'Lead waited 4+ hours for first reply. Interest dropped significantly after 2 hours.' },
+    { id: 2, name: 'Diana Cruz', initials: 'DC', value: 7200, daysSince: 3, dropReason: 'price_hesitation', reasonLabel: 'Price Hesitation', status: 'recovering', campaignType: 'discount', color: '#f59e0b', aiMessage: 'Still interested? Here is an exclusive 15% discount, valid today only.', aiAnalysis: 'Engaged with pricing page 4 times. Left after seeing total. Price sensitivity detected.' },
+    { id: 3, name: 'Leo Martinez', initials: 'LM', value: 3800, daysSince: 7, dropReason: 'unclear_offer', reasonLabel: 'Unclear Offer', status: 'pending', campaignType: 'question', color: '#8b5cf6', aiMessage: 'Quick question before you go. What stopped you from moving forward?', aiAnalysis: 'Opened 3 emails but never clicked CTA. Likely confused by offer structure.' },
+    { id: 4, name: 'Rachel Kim', initials: 'RK', value: 2900, daysSince: 10, dropReason: 'went_cold', reasonLabel: 'Went Cold', status: 'pending', campaignType: 'reminder', color: '#6b7280', aiMessage: 'Hey Rachel, we have not heard from you in a while. Still looking for a solution?', aiAnalysis: 'Was active for 2 weeks then suddenly stopped. No negative signals detected.' },
+    { id: 5, name: 'Jake Thornton', initials: 'JT', value: 5100, daysSince: 2, dropReason: 'wrong_timing', reasonLabel: 'Wrong Timing', status: 'recovering', campaignType: 'slot-save', color: '#3b82f6', aiMessage: 'Your consultation slot is still available. Want to reschedule for a better time?', aiAnalysis: 'Booked a call but cancelled 1 hour before. Calendar shows heavy schedule this week.' },
+    { id: 6, name: 'Nina Patel', initials: 'NP', value: 6500, daysSince: 4, dropReason: 'price_hesitation', reasonLabel: 'Price Hesitation', status: 'recovered', campaignType: 'discount', color: '#f59e0b', aiMessage: 'Great news! We have a limited offer just for you. 20% off if you sign up today.', aiAnalysis: 'Compared pricing with 2 competitors. Returned after receiving discount offer.' },
+];
+
+const recoveryStats = {
+    atRisk: 30000,
+    recoveredThisWeek: 12450,
+    recoveryRate: 27,
+    pendingCount: 8,
+    totalRecovered: 48200,
+    weeklyData: {
+        recovered: [1200, 1800, 2100, 1500, 2400, 1900, 1550],
+        lost: [800, 1200, 600, 2100, 900, 1400, 1100],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    }
+};
+
+const speedGuardConfig = {
+    safeThreshold: 120,    // 0-2 min = green
+    warningThreshold: 300, // 2-5 min = yellow
+    // 5+ min = red (danger)
+    autoReplyDelay: 360    // auto-reply fires at 6 min
+};
+
+const speedGuardLeads = [
+    { id: 101, name: 'Sarah Chen', initials: 'SC', color: '#2F6FA3', message: 'Hi, I saw your enterprise plans and have a few questions about integration.', elapsedSeconds: 85, status: 'active', autoReplied: false },
+    { id: 102, name: 'Mike Ross', initials: 'MR', color: '#45B29D', message: 'Hey! Just filled out the contact form. Looking for a demo.', elapsedSeconds: 210, status: 'active', autoReplied: false },
+    { id: 103, name: 'David Kim', initials: 'DK', color: '#45B29D', message: 'Replying to your SMS - yes I am interested in the premium plan!', elapsedSeconds: 340, status: 'active', autoReplied: false },
+];
+
+let speedGuardInterval = null;
+let speedGuardAlertShown = {};
+
 // ==================== SCREEN NAVIGATION ====================
 const screens = {};
 let currentScreen = 'screen-splash';
@@ -55,7 +93,7 @@ function navigateTo(screenId, showNav = true) {
     currentScreen = screenId;
 
     const nav = document.getElementById('bottom-nav');
-    const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-campaigns', 'screen-settings'];
+    const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-recovery', 'screen-settings'];
     if (showNav && navScreens.includes(screenId)) {
         nav.classList.remove('hidden');
     } else if (screenId === 'screen-splash' || screenId === 'screen-login') {
@@ -85,6 +123,10 @@ function navigateTo(screenId, showNav = true) {
             drawStockChart();
             animateStockBars();
         }, 300);
+    }
+    if (screenId === 'screen-recovery') {
+        animateRecoveryCounters();
+        setTimeout(() => drawRecoveryChart(), 300);
     }
 }
 
@@ -908,12 +950,445 @@ document.addEventListener('DOMContentLoaded', () => {
     initAutomations();
     initCampaigns();
     initPOS();
+    initRecovery();
     initSettings();
     initBottomNav();
     initBackButtons();
     initPeriodButtons();
     initAIChatbot();
+    initSpeedGuard();
 });
+
+// ==================== REPLY SPEED GUARD ====================
+function initSpeedGuard() {
+    renderSpeedGuardCards();
+    updateSpeedGuardBanner();
+
+    // Start the live timer - ticks every second
+    if (speedGuardInterval) clearInterval(speedGuardInterval);
+    speedGuardInterval = setInterval(() => {
+        speedGuardLeads.forEach(lead => {
+            if (lead.status === 'active') {
+                lead.elapsedSeconds++;
+
+                // Auto-reply trigger
+                if (lead.elapsedSeconds >= speedGuardConfig.autoReplyDelay && !lead.autoReplied) {
+                    triggerAutoReply(lead);
+                }
+            }
+        });
+        updateSpeedGuardTimers();
+        updateSpeedGuardBanner();
+    }, 1000);
+
+    // Wire up alert dismiss
+    const alertDismiss = document.getElementById('sg-alert-dismiss');
+    if (alertDismiss) {
+        alertDismiss.addEventListener('click', () => {
+            document.getElementById('sg-alert-toast').classList.remove('active');
+        });
+    }
+}
+
+function getUrgencyLevel(seconds) {
+    if (seconds < speedGuardConfig.safeThreshold) return 'safe';
+    if (seconds < speedGuardConfig.warningThreshold) return 'warning';
+    return 'danger';
+}
+
+function formatTimer(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function getUrgencyPercent(seconds) {
+    // 0-360s mapped to 0-100%
+    return Math.min((seconds / speedGuardConfig.autoReplyDelay) * 100, 100);
+}
+
+function renderSpeedGuardCards() {
+    const container = document.getElementById('sg-cards-list');
+    if (!container) return;
+
+    const activeLeads = speedGuardLeads.filter(l => l.status === 'active');
+
+    if (activeLeads.length === 0) {
+        container.innerHTML = '<div class="sg-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>All leads responded. You are safe!</span></div>';
+        return;
+    }
+
+    container.innerHTML = activeLeads.map((lead, i) => {
+        const urgency = getUrgencyLevel(lead.elapsedSeconds);
+        const pct = getUrgencyPercent(lead.elapsedSeconds);
+        // SVG ring: circumference = 2*PI*18 = ~113
+        const dashOffset = 113 - (pct / 100) * 113;
+
+        return `
+        <div class="sg-card sg-${urgency}" data-sg-id="${lead.id}" style="animation-delay: ${i * 0.08}s">
+            <div class="sg-card-left">
+                <div class="sg-ring-wrap">
+                    <svg class="sg-ring" viewBox="0 0 40 40">
+                        <circle cx="20" cy="20" r="18" fill="none" stroke-width="3" class="sg-ring-bg"/>
+                        <circle cx="20" cy="20" r="18" fill="none" stroke-width="3" class="sg-ring-fill sg-ring-${urgency}" 
+                            stroke-dasharray="113" stroke-dashoffset="${dashOffset}" stroke-linecap="round" transform="rotate(-90 20 20)"
+                            data-sg-ring="${lead.id}"/>
+                    </svg>
+                    <div class="sg-avatar" style="background: ${lead.color}">${lead.initials}</div>
+                </div>
+            </div>
+            <div class="sg-card-center">
+                <div class="sg-card-name">${lead.name}</div>
+                <div class="sg-card-msg">${lead.message.length > 45 ? lead.message.substring(0, 45) + '...' : lead.message}</div>
+            </div>
+            <div class="sg-card-right">
+                <div class="sg-timer sg-timer-${urgency}" data-sg-timer="${lead.id}">${formatTimer(lead.elapsedSeconds)}</div>
+                ${lead.autoReplied ?
+                '<div class="sg-auto-replied"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg> AI Replied</div>' :
+                `<button class="sg-reply-btn" data-sg-reply="${lead.id}">Reply</button>`
+            }
+            </div>
+        </div>`;
+    }).join('');
+
+    // Wire up reply buttons
+    container.querySelectorAll('.sg-reply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.sgReply);
+            handleManualReply(id);
+        });
+    });
+}
+
+function updateSpeedGuardTimers() {
+    speedGuardLeads.forEach(lead => {
+        if (lead.status !== 'active') return;
+
+        const urgency = getUrgencyLevel(lead.elapsedSeconds);
+        const pct = getUrgencyPercent(lead.elapsedSeconds);
+        const dashOffset = 113 - (pct / 100) * 113;
+
+        // Update timer text
+        const timerEl = document.querySelector(`[data-sg-timer="${lead.id}"]`);
+        if (timerEl) {
+            timerEl.textContent = formatTimer(lead.elapsedSeconds);
+            timerEl.className = `sg-timer sg-timer-${urgency}`;
+        }
+
+        // Update ring
+        const ringEl = document.querySelector(`[data-sg-ring="${lead.id}"]`);
+        if (ringEl) {
+            ringEl.setAttribute('stroke-dashoffset', dashOffset);
+            ringEl.className.baseVal = `sg-ring-fill sg-ring-${urgency}`;
+        }
+
+        // Update card border
+        const card = document.querySelector(`[data-sg-id="${lead.id}"]`);
+        if (card) {
+            card.className = `sg-card sg-${urgency}`;
+        }
+
+        // Show alert when crossing danger threshold
+        if (urgency === 'danger' && !speedGuardAlertShown[lead.id] && !lead.autoReplied) {
+            speedGuardAlertShown[lead.id] = true;
+            showSpeedGuardAlert(lead);
+        }
+    });
+
+    // Update header count
+    const countEl = document.getElementById('sg-active-count');
+    if (countEl) {
+        const activeCount = speedGuardLeads.filter(l => l.status === 'active').length;
+        countEl.textContent = activeCount;
+    }
+}
+
+function updateSpeedGuardBanner() {
+    const banner = document.getElementById('sg-leads-banner');
+    if (!banner) return;
+    const activeCount = speedGuardLeads.filter(l => l.status === 'active').length;
+    const dangerCount = speedGuardLeads.filter(l => l.status === 'active' && getUrgencyLevel(l.elapsedSeconds) === 'danger').length;
+
+    if (activeCount === 0) {
+        banner.classList.remove('active');
+        return;
+    }
+
+    banner.classList.add('active');
+    const bannerText = document.getElementById('sg-banner-text');
+    if (bannerText) {
+        if (dangerCount > 0) {
+            bannerText.innerHTML = `<strong>${dangerCount} lead${dangerCount > 1 ? 's' : ''} at high risk!</strong> Reply now to avoid losing them.`;
+        } else {
+            bannerText.innerHTML = `<strong>${activeCount} lead${activeCount > 1 ? 's' : ''} waiting</strong> for your reply.`;
+        }
+    }
+    const bannerIcon = document.getElementById('sg-banner-icon');
+    if (bannerIcon) {
+        bannerIcon.className = dangerCount > 0 ? 'sg-banner-dot sg-dot-danger' : 'sg-banner-dot sg-dot-warning';
+    }
+}
+
+function showSpeedGuardAlert(lead) {
+    const toast = document.getElementById('sg-alert-toast');
+    if (!toast) return;
+
+    document.getElementById('sg-alert-name').textContent = lead.name;
+    document.getElementById('sg-alert-timer').textContent = formatTimer(lead.elapsedSeconds);
+
+    // Wire reply actions
+    const replyBtn = document.getElementById('sg-alert-reply');
+    const autoBtn = document.getElementById('sg-alert-auto');
+
+    const newReplyBtn = replyBtn.cloneNode(true);
+    const newAutoBtn = autoBtn.cloneNode(true);
+    replyBtn.parentNode.replaceChild(newReplyBtn, replyBtn);
+    autoBtn.parentNode.replaceChild(newAutoBtn, autoBtn);
+
+    newReplyBtn.id = 'sg-alert-reply';
+    newAutoBtn.id = 'sg-alert-auto';
+
+    newReplyBtn.addEventListener('click', () => {
+        handleManualReply(lead.id);
+        toast.classList.remove('active');
+    });
+    newAutoBtn.addEventListener('click', () => {
+        triggerAutoReply(lead);
+        toast.classList.remove('active');
+    });
+
+    toast.classList.add('active');
+
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => {
+        toast.classList.remove('active');
+    }, 8000);
+}
+
+function triggerAutoReply(lead) {
+    lead.autoReplied = true;
+
+    // Update the card to show AI Replied
+    const card = document.querySelector(`[data-sg-id="${lead.id}"]`);
+    if (card) {
+        const rightEl = card.querySelector('.sg-card-right');
+        if (rightEl) {
+            const btn = rightEl.querySelector('.sg-reply-btn');
+            if (btn) {
+                btn.outerHTML = '<div class="sg-auto-replied"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg> AI Replied</div>';
+            }
+        }
+    }
+}
+
+function handleManualReply(leadId) {
+    const lead = speedGuardLeads.find(l => l.id === leadId);
+    if (!lead) return;
+    lead.status = 'replied';
+
+    // Animate card out
+    const card = document.querySelector(`[data-sg-id="${leadId}"]`);
+    if (card) {
+        card.style.transition = 'all 0.4s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(60px)';
+        card.style.maxHeight = card.scrollHeight + 'px';
+        setTimeout(() => {
+            card.style.maxHeight = '0';
+            card.style.padding = '0';
+            card.style.margin = '0';
+            card.style.overflow = 'hidden';
+        }, 200);
+        setTimeout(() => {
+            renderSpeedGuardCards();
+        }, 500);
+    }
+
+    updateSpeedGuardBanner();
+}
+
+// ==================== RECOVERY ENGINE ====================
+function initRecovery() {
+    renderRecoveryOpportunities();
+
+    // Filter pills
+    document.querySelectorAll('.recovery-pills .pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.recovery-pills .pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const filter = pill.dataset.recFilter;
+            if (filter === 'all') {
+                renderRecoveryOpportunities(recoveryData);
+            } else {
+                renderRecoveryOpportunities(recoveryData.filter(r => r.status === filter));
+            }
+        });
+    });
+}
+
+function renderRecoveryOpportunities(data = recoveryData) {
+    const container = document.getElementById('recovery-opps-list');
+    if (!container) return;
+
+    const reasonIcons = {
+        slow_response: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        price_hesitation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
+        unclear_offer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        went_cold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+        wrong_timing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+    };
+
+    container.innerHTML = data.map((opp, i) => {
+        const statusClass = `rec-status-${opp.status}`;
+        const statusLabel = opp.status.charAt(0).toUpperCase() + opp.status.slice(1);
+        return `
+        <div class="lost-opp-card" style="animation-delay: ${i * 0.08}s" data-opp-id="${opp.id}">
+            <div class="lost-opp-header">
+                <div class="lost-opp-avatar" style="background: linear-gradient(135deg, ${opp.color}40, ${opp.color}15)">${opp.initials}</div>
+                <div class="lost-opp-info">
+                    <h4>${opp.name}</h4>
+                    <span class="lost-opp-value">Potential: $${opp.value.toLocaleString()}</span>
+                </div>
+                <span class="lost-opp-status ${statusClass}">${statusLabel}</span>
+            </div>
+            <div class="lost-opp-reason">
+                <div class="drop-reason drop-${opp.dropReason}">
+                    <span class="drop-reason-icon">${reasonIcons[opp.dropReason] || ''}</span>
+                    <span>${opp.reasonLabel}</span>
+                </div>
+                <span class="lost-opp-days">${opp.daysSince}d ago</span>
+            </div>
+            <div class="lost-opp-ai">
+                <div class="ai-analysis-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    AI Analysis
+                </div>
+                <p class="ai-analysis-text">${opp.aiAnalysis}</p>
+            </div>
+            <div class="lost-opp-action">
+                <div class="recovery-msg-preview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    <span>"${opp.aiMessage}"</span>
+                </div>
+                ${opp.status === 'recovered' ? `<button class="btn-recover btn-recovered" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovered</button>` : `<button class="btn-recover" data-recover-id="${opp.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Recover Now</button>`}
+            </div>
+        </div>`;
+    }).join('');
+
+    // Wire up recover buttons
+    container.querySelectorAll('.btn-recover:not(.btn-recovered)').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.recoverId);
+            const opp = recoveryData.find(r => r.id === id);
+            if (!opp) return;
+
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="spin-icon" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Sending...';
+            btn.style.opacity = '0.7';
+
+            setTimeout(() => {
+                opp.status = 'recovering';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovery Sent!';
+                btn.classList.add('btn-recovering');
+                btn.style.opacity = '1';
+                btn.disabled = true;
+
+                // Update the status badge
+                const card = btn.closest('.lost-opp-card');
+                const statusEl = card.querySelector('.lost-opp-status');
+                statusEl.className = 'lost-opp-status rec-status-recovering';
+                statusEl.textContent = 'Recovering';
+            }, 1200);
+        });
+    });
+}
+
+function animateRecoveryCounters() {
+    document.querySelectorAll('.rec-stat-value').forEach(el => {
+        const target = parseFloat(el.dataset.recVal);
+        const prefix = el.dataset.recPrefix || '';
+        const suffix = el.dataset.recSuffix || '';
+        const isDecimal = el.dataset.recDecimal === 'true';
+        let current = 0;
+        const duration = 1400;
+        const step = target / (duration / 16);
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            const display = isDecimal ? current.toFixed(0) : Math.floor(current).toLocaleString();
+            el.textContent = prefix + display + suffix;
+        }, 16);
+    });
+}
+
+function drawRecoveryChart() {
+    const canvas = document.getElementById('chart-recovery');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = (rect.width - 32) * dpr;
+    canvas.height = 200 * dpr;
+    canvas.style.width = (rect.width - 32) + 'px';
+    canvas.style.height = '200px';
+    ctx.scale(dpr, dpr);
+    const w = rect.width - 32, h = 200;
+
+    const data1 = recoveryStats.weeklyData.recovered;
+    const data2 = recoveryStats.weeklyData.lost;
+    const labels = recoveryStats.weeklyData.labels;
+
+    const padding = { top: 20, right: 10, bottom: 30, left: 40 };
+    const chartW = w - padding.left - padding.right;
+    const chartH = h - padding.top - padding.bottom;
+    const maxVal = 3000;
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#e2e6eb';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(w - padding.right, y); ctx.stroke();
+        ctx.fillStyle = '#9ca3af'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
+        ctx.fillText('$' + ((maxVal - (maxVal / 4) * i) / 1000).toFixed(1) + 'k', padding.left - 6, y + 4);
+    }
+    labels.forEach((l, i) => {
+        ctx.fillStyle = '#9ca3af'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(l, padding.left + (chartW / (labels.length - 1)) * i, h - 8);
+    });
+
+    // Recovered line (green gradient fill)
+    const grad1 = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
+    grad1.addColorStop(0, 'rgba(69, 178, 157, 0.25)'); grad1.addColorStop(1, 'rgba(69, 178, 157, 0)');
+    ctx.beginPath();
+    data1.forEach((val, i) => {
+        const x = padding.left + (chartW / (data1.length - 1)) * i;
+        const y = padding.top + chartH - (val / maxVal) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(padding.left + chartW, h - padding.bottom);
+    ctx.lineTo(padding.left, h - padding.bottom);
+    ctx.closePath(); ctx.fillStyle = grad1; ctx.fill();
+
+    // Recovered line
+    drawSingleLine(ctx, data1, padding, chartW, chartH, maxVal, '#45B29D', 2.5);
+    // Lost line (red)
+    drawSingleLine(ctx, data2, padding, chartW, chartH, maxVal, '#ef4444', 2);
+
+    // Legend
+    ctx.fillStyle = '#45B29D'; ctx.fillRect(w - 130, 8, 10, 3);
+    ctx.fillStyle = '#9ca3af'; ctx.font = '9px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('Recovered', w - 116, 12);
+    ctx.fillStyle = '#ef4444'; ctx.fillRect(w - 55, 8, 10, 3);
+    ctx.fillStyle = '#9ca3af'; ctx.fillText('Lost', w - 41, 12);
+}
 
 // ==================== POS (POINT OF SALE) ====================
 function getProductIcon(icon) {
