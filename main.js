@@ -1,8 +1,44 @@
 // ==================== NAVIFLOW PROTOTYPE ====================
 // Navigation, data rendering, charts, and interactions
 
+// ==================== API ====================
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''
+  : '';
+
+async function loadDataFromAPI() {
+  try {
+    const [dashRes, leadsRes, invRes, recRes] = await Promise.all([
+      fetch(`${BASE_URL}/api/dashboard`),
+      fetch(`${BASE_URL}/api/leads`),
+      fetch(`${BASE_URL}/api/inventory`),
+      fetch(`${BASE_URL}/api/recovery`),
+    ]);
+
+    if (dashRes.ok) {
+      const dash = await dashRes.json();
+      if (dash.speedGuard) speedGuardLeads.splice(0, speedGuardLeads.length, ...dash.speedGuard);
+    }
+    if (leadsRes.ok) {
+      const leads = await leadsRes.json();
+      leadsData.splice(0, leadsData.length, ...leads.data);
+    }
+    if (invRes.ok) {
+      const inv = await invRes.json();
+      inventoryData.splice(0, inventoryData.length, ...inv.data);
+    }
+    if (recRes.ok) {
+      const rec = await recRes.json();
+      recoveryData.splice(0, recoveryData.length, ...rec.data);
+      Object.assign(recoveryStats, rec.stats);
+    }
+  } catch (e) {
+    // Fall back to hardcoded demo data already in the arrays
+  }
+}
+
 // ==================== DATA ====================
-const leadsData = [
+let leadsData = [
     {
         id: 1, name: 'Sarah Chen', initials: 'SC', email: 'sarah.chen@techcorp.com', phone: '+1 (555) 234-5678', role: 'Marketing Director at TechCorp', status: 'contacted', tags: ['VIP', 'Enterprise', 'Q1 Campaign'], color: '#2F6FA3',
         conversation: [
@@ -20,7 +56,7 @@ const leadsData = [
     { id: 8, name: 'Tom Bradley', initials: 'TB', email: 'tom@fitness.pro', phone: '+1 (555) 901-2345', role: 'Fitness Coach', status: 'contacted', tags: ['Health', 'B2C'], color: '#2F6FA3', conversation: [] },
 ];
 
-const inventoryData = [
+let inventoryData = [
     { id: 1, name: 'Wireless Earbuds', sku: 'NF-ELEC-001', price: 79.99, stock: 45, maxStock: 100, category: 'electronics', gradient: 'linear-gradient(135deg, #2F6FA3, #1E3A5F)', icon: 'headphones' },
     { id: 2, name: 'Smart Watch Pro', sku: 'NF-ELEC-002', price: 249.99, stock: 12, maxStock: 50, category: 'electronics', gradient: 'linear-gradient(135deg, #1E3A5F, #2F6FA3)', icon: 'watch' },
     { id: 3, name: 'Premium T-Shirt', sku: 'NF-CLTH-001', price: 34.99, stock: 78, maxStock: 120, category: 'clothing', gradient: 'linear-gradient(135deg, #45B29D, #2F6FA3)', icon: 'shirt' },
@@ -35,7 +71,7 @@ const inventoryData = [
     { id: 12, name: 'Protein Bars (12pk)', sku: 'NF-FOOD-003', price: 28.99, stock: 67, maxStock: 100, category: 'food', gradient: 'linear-gradient(135deg, #9ED8C3, #2F6FA3)', icon: 'package' },
 ];
 
-const recoveryData = [
+let recoveryData = [
     { id: 1, name: 'Marcus Webb', initials: 'MW', value: 4500, daysSince: 5, dropReason: 'slow_response', reasonLabel: 'Slow Response', status: 'pending', campaignType: 'slot-save', color: '#ef4444', aiMessage: 'We saved your slot. Want me to book it for you right now?', aiAnalysis: 'Lead waited 4+ hours for first reply. Interest dropped significantly after 2 hours.' },
     { id: 2, name: 'Diana Cruz', initials: 'DC', value: 7200, daysSince: 3, dropReason: 'price_hesitation', reasonLabel: 'Price Hesitation', status: 'recovering', campaignType: 'discount', color: '#f59e0b', aiMessage: 'Still interested? Here is an exclusive 15% discount, valid today only.', aiAnalysis: 'Engaged with pricing page 4 times. Left after seeing total. Price sensitivity detected.' },
     { id: 3, name: 'Leo Martinez', initials: 'LM', value: 3800, daysSince: 7, dropReason: 'unclear_offer', reasonLabel: 'Unclear Offer', status: 'pending', campaignType: 'question', color: '#8b5cf6', aiMessage: 'Quick question before you go. What stopped you from moving forward?', aiAnalysis: 'Opened 3 emails but never clicked CTA. Likely confused by offer structure.' },
@@ -44,7 +80,7 @@ const recoveryData = [
     { id: 6, name: 'Nina Patel', initials: 'NP', value: 6500, daysSince: 4, dropReason: 'price_hesitation', reasonLabel: 'Price Hesitation', status: 'recovered', campaignType: 'discount', color: '#f59e0b', aiMessage: 'Great news! We have a limited offer just for you. 20% off if you sign up today.', aiAnalysis: 'Compared pricing with 2 competitors. Returned after receiving discount offer.' },
 ];
 
-const recoveryStats = {
+let recoveryStats = {
     atRisk: 30000,
     recoveredThisWeek: 12450,
     recoveryRate: 27,
@@ -64,7 +100,7 @@ const speedGuardConfig = {
     autoReplyDelay: 360    // auto-reply fires at 6 min
 };
 
-const speedGuardLeads = [
+let speedGuardLeads = [
     { id: 101, name: 'Sarah Chen', initials: 'SC', color: '#2F6FA3', message: 'Hi, I saw your enterprise plans and have a few questions about integration.', elapsedSeconds: 85, status: 'active', autoReplied: false },
     { id: 102, name: 'Mike Ross', initials: 'MR', color: '#45B29D', message: 'Hey! Just filled out the contact form. Looking for a demo.', elapsedSeconds: 210, status: 'active', autoReplied: false },
     { id: 103, name: 'David Kim', initials: 'DK', color: '#45B29D', message: 'Replying to your SMS - yes I am interested in the premium plan!', elapsedSeconds: 340, status: 'active', autoReplied: false },
@@ -132,9 +168,10 @@ function navigateTo(screenId, showNav = true) {
 
 // ==================== SPLASH SCREEN ====================
 function initSplash() {
-    setTimeout(() => {
+    const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
+    Promise.all([minDelay, loadDataFromAPI()]).then(() => {
         navigateTo('screen-login', false);
-    }, 3000);
+    });
 }
 
 // ==================== LOGIN ====================
