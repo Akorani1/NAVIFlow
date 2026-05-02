@@ -1,4 +1,4 @@
-/* ========== DESKTOP SIDEBAR (hidden by default, shown at 1024px+ when .visible) ========== */
+/* ========== DESKTOP SIDEBAR (hidden on mobile, shown on desktop when .visible) ========== */
 #desktop-sidebar {
   display: none;
 }
@@ -198,12 +198,9 @@
     height: 15px;
   }
 
-  /* Screens sit inside #main-content */
-  .screen {
-    background: var(--light);
-  }
+  /* ===== SCREEN BASE ===== */
+  .screen { background: var(--light); }
 
-  /* More breathing room on desktop */
   .screen-scroll {
     padding: 32px 40px 32px;
     scrollbar-width: thin;
@@ -216,20 +213,17 @@
   }
 
   .screen-scroll::-webkit-scrollbar-track { background: transparent; }
+
   .screen-scroll::-webkit-scrollbar-thumb {
     background: var(--gray-200);
     border-radius: 3px;
   }
 
   /* Hide mobile bottom nav */
-  #bottom-nav {
-    display: none !important;
-  }
+  #bottom-nav { display: none !important; }
 
   /* ===== LOGIN DESKTOP ===== */
-  #screen-login .login-wrapper {
-    flex-direction: row;
-  }
+  #screen-login .login-wrapper { flex-direction: row; }
 
   #screen-login .login-illustration {
     width: 46%;
@@ -245,6 +239,7 @@
     justify-content: center;
     padding: 0 64px;
     overflow-y: auto;
+    margin-top: 0;
   }
 
   #screen-login .login-title { font-size: 1.8rem; }
@@ -263,7 +258,15 @@
 
   .stat-value { font-size: 1.6rem; }
 
-  /* Charts in a 2-column row */
+  /* Speed guard cards 3-up */
+  .sg-cards-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Charts in 2-column layout */
   .desktop-charts-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -276,7 +279,7 @@
     flex-direction: column;
   }
 
-  /* AI insight cards in a 2-col grid */
+  /* AI insight cards in 2-col grid */
   .ai-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -284,17 +287,8 @@
     margin-bottom: 28px;
   }
 
-  /* Speed guard cards 3-up */
-  .sg-cards-list {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
   /* Quick actions 6-up */
-  .quick-actions {
-    grid-template-columns: repeat(6, 1fr);
-  }
+  .quick-actions { grid-template-columns: repeat(6, 1fr); }
 
   /* ===== LEADS DESKTOP ===== */
   .leads-list {
@@ -303,7 +297,19 @@
     gap: 10px;
   }
 
-  .lead-card { cursor: pointer; }
+  /* ===== LEAD DETAIL DESKTOP ===== */
+  .lead-contact-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .lead-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .lead-detail-tabs { margin-top: 24px; }
 
   /* ===== AUTOMATIONS DESKTOP ===== */
   .auto-list {
@@ -313,18 +319,23 @@
     margin-bottom: 24px;
   }
 
-  /* Automation builder wider */
-  .auto-builder {
-    max-width: 600px;
-  }
+  .auto-builder { max-width: 600px; }
 
   /* ===== CAMPAIGNS DESKTOP ===== */
-  .camp-desktop-grid {
+  .desktop-camp-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    gap: 28px;
     align-items: start;
   }
+
+  .desktop-camp-left,
+  .desktop-camp-right {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .campaign-creator { max-width: none; }
 
   /* ===== POS / INVENTORY DESKTOP ===== */
   .pos-stat-cards {
@@ -338,34 +349,46 @@
   }
 
   /* ===== RECOVERY DESKTOP ===== */
-  .recovery-stats-bar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-
-  .recovery-opps-grid {
+  .recovery-opps-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
   }
 
+  .active-recovery-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
   /* ===== ANALYTICS DESKTOP ===== */
-  .analytics-charts-grid {
+  .analytics-summary {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .desktop-analytics-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    align-items: start;
+  }
+
+  .desktop-analytics-col {
+    display: flex;
+    flex-direction: column;
   }
 
   /* ===== SETTINGS DESKTOP ===== */
-  .settings-desktop-grid {
+  .settings-sections {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     align-items: start;
   }
 
-  /* ===== AI CHAT (desktop: right-side panel) ===== */
+  /* ===== AI CHAT (desktop: floating right panel) ===== */
   .ai-chat-fab {
     bottom: 24px;
     right: 24px;
@@ -373,9 +396,7 @@
     height: 56px;
   }
 
-  .ai-chat-overlay {
-    display: none !important;
-  }
+  .ai-chat-overlay { display: none !important; }
 
   .ai-chat-panel {
     width: 360px;
@@ -387,7 +408,9 @@
     transform: scale(0.95) translateY(10px);
     opacity: 0;
     visibility: hidden;
-    transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.25s ease, visibility 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1),
+                opacity 0.25s ease,
+                visibility 0.25s ease;
   }
 
   .ai-chat-panel.active {
@@ -395,4 +418,9 @@
     opacity: 1;
     visibility: visible;
   }
+
+  /* ===== SECTION HEADERS DESKTOP ===== */
+  .section-header h3 { font-size: 1.05rem; }
+
+  .screen-top-bar h2 { font-size: 1.4rem; }
 }

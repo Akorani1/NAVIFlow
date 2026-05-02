@@ -827,6 +827,8 @@
           <button class="camp-tab" data-tab="sms">SMS Campaigns</button>
         </div>
 
+        <div class="desktop-camp-grid">
+        <div class="desktop-camp-left">
         <!-- Campaign Creator -->
         <div class="campaign-creator">
           <div class="input-group">
@@ -862,6 +864,8 @@
           </div>
         </div>
 
+        </div><!-- /.desktop-camp-left -->
+        <div class="desktop-camp-right">
         <!-- Metrics Preview -->
         <div class="section-header">
           <h3>Campaign Metrics</h3>
@@ -959,6 +963,8 @@
           </div>
         </div>
 
+        </div><!-- /.desktop-camp-right -->
+        </div><!-- /.desktop-camp-grid -->
         <button class="btn-primary btn-full" id="btn-send-campaign">Launch Campaign</button>
         <div class="scroll-spacer"></div>
       </div>
@@ -1383,20 +1389,25 @@
             <span class="an-sum-label">Total Leads</span>
             <span class="an-sum-trend up">+15%</span>
           </div>
+          <div class="an-sum-card">
+            <span class="an-sum-val">4.8%</span>
+            <span class="an-sum-label">Conversion Rate</span>
+            <span class="an-sum-trend up">+1.2%</span>
+          </div>
+          <div class="an-sum-card">
+            <span class="an-sum-val">67%</span>
+            <span class="an-sum-label">Open Rate</span>
+            <span class="an-sum-trend up">+5%</span>
+          </div>
         </div>
 
+        <div class="desktop-analytics-grid">
+        <div class="desktop-analytics-col">
         <div class="section-header">
           <h3>Lead Conversion Rate</h3>
         </div>
         <div class="chart-card">
           <canvas id="chart-conversion" width="360" height="200"></canvas>
-        </div>
-
-        <div class="section-header">
-          <h3>Revenue from Campaigns</h3>
-        </div>
-        <div class="chart-card">
-          <canvas id="chart-revenue" width="360" height="200"></canvas>
         </div>
 
         <div class="section-header">
@@ -1434,6 +1445,15 @@
             </div>
           </div>
         </div>
+        </div><!-- /.desktop-analytics-col -->
+        <div class="desktop-analytics-col">
+
+        <div class="section-header">
+          <h3>Revenue from Campaigns</h3>
+        </div>
+        <div class="chart-card">
+          <canvas id="chart-revenue" width="360" height="200"></canvas>
+        </div>
 
         <div class="section-header">
           <h3>Outreach Response Rate</h3>
@@ -1441,6 +1461,8 @@
         <div class="chart-card">
           <canvas id="chart-response" width="360" height="200"></canvas>
         </div>
+        </div><!-- /.desktop-analytics-col -->
+        </div><!-- /.desktop-analytics-grid -->
         <div class="scroll-spacer"></div>
       </div>
     </section>
