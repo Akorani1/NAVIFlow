@@ -1795,27 +1795,19 @@ function initAIChatbot() {
     overlay.addEventListener('click', closeChat);
     closeBtn.addEventListener('click', closeChat);
 
-    const generateAIResponse = (query) => {
-        const lowerQ = query.toLowerCase();
-        let response = "I can definitely help with that. Can you provide more details so I can look it up in your NaviFlow data?";
-
-        if (lowerQ.includes('revenue')) {
-            response = "Your current revenue this week is $24,680 across all properties. That's up 12% compared to last week!";
-        } else if (lowerQ.includes('lead')) {
-            const count = leadsData.length;
-            const vipCount = leadsData.filter(l => l.tags.some(t => t.toLowerCase() === 'vip')).length;
-            response = `You currently have ${count} total leads, including ${vipCount} VIP leads. Sarah Chen is your highest-scoring priority lead today.`;
-        } else if (lowerQ.includes('stock') || lowerQ.includes('inventory')) {
-            const lowStockItems = inventoryData.filter(p => (p.stock / p.maxStock) <= 0.2);
-            response = `You currently have ${lowStockItems.length} items low on stock. I recommend ordering more "${lowStockItems[0]?.name || 'supplies'}" soon.`;
-        } else if (lowerQ.includes('campaign') || lowerQ.includes('perform')) {
-            response = "Your 'Spring Sale' campaign is currently your best performer with a 67% open rate and an excellent 12% conversion rate.";
-        } else if (lowerQ.includes('hi') || lowerQ.includes('hello')) {
-            response = "Hello! How can I assist you with your NaviFlow business data today?";
-        }
-
-        return response;
-    };
+    const buildContext = () => ({
+        totalLeads: leadsData.length,
+        vipLeads: leadsData.filter(l => l.tags?.some(t => t.toLowerCase() === 'vip')).length,
+        hotLeads: leadsData.filter(l => l.status === 'hot').length,
+        lowStockItems: inventoryData
+            .filter(p => (p.stock / p.maxStock) <= 0.2)
+            .map(p => ({ name: p.name, stock: p.stock, maxStock: p.maxStock })),
+        totalInventoryItems: inventoryData.length,
+        recoveryAtRisk: recoveryStats.atRisk,
+        recoveryRate: recoveryStats.recoveryRate,
+        weeklyRevenue: 24680,
+        revenueGrowth: '12%',
+    });
 
     const appendMessage = (text, sender) => {
         messagesEl.insertAdjacentHTML('beforeend', `
@@ -1827,10 +1819,11 @@ function initAIChatbot() {
         messagesEl.scrollTop = messagesEl.scrollHeight;
     };
 
-    const handleSend = (text) => {
+    const handleSend = async (text) => {
         if (!text) return;
         appendMessage(text, 'user');
         input.value = '';
+        sendBtn.disabled = true;
 
         const typingId = 'ai-typing-' + Date.now();
         messagesEl.insertAdjacentHTML('beforeend', `
@@ -1844,11 +1837,24 @@ function initAIChatbot() {
         `);
         messagesEl.scrollTop = messagesEl.scrollHeight;
 
-        setTimeout(() => {
+        try {
+            const res = await fetch(`${BASE_URL}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, context: buildContext() }),
+            });
+            const data = await res.json();
+            const reply = data.response || "I couldn't get a response right now. Please try again.";
             const ind = document.getElementById(typingId);
             if (ind) ind.remove();
-            appendMessage(generateAIResponse(text), 'bot');
-        }, 1200);
+            appendMessage(reply, 'bot');
+        } catch {
+            const ind = document.getElementById(typingId);
+            if (ind) ind.remove();
+            appendMessage("Sorry, I'm having trouble connecting right now. Please try again.", 'bot');
+        } finally {
+            sendBtn.disabled = false;
+        }
     };
 
     sendBtn.addEventListener('click', () => handleSend(input.value.trim()));
