@@ -1,0 +1,398 @@
+/* ========== DESKTOP SIDEBAR (hidden by default, shown at 1024px+ when .visible) ========== */
+#desktop-sidebar {
+  display: none;
+}
+
+/* ========== DESKTOP LAYOUT ========== */
+@media (min-width: 1024px) {
+
+  /* Full-viewport shell */
+  body {
+    overflow: hidden;
+    background: #0d1b2e;
+    align-items: stretch;
+  }
+
+  #app {
+    max-width: 100%;
+    width: 100vw;
+    flex-direction: row;
+    background: transparent;
+  }
+
+  #main-content {
+    flex: 1;
+    min-width: 0;
+    height: 100dvh;
+    background: var(--light);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== SIDEBAR ===== */
+  #desktop-sidebar.visible {
+    display: flex;
+    width: 240px;
+    min-width: 240px;
+    height: 100dvh;
+    background: var(--navy);
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 50;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 26px 18px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .sidebar-logo-img {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    object-fit: contain;
+  }
+
+  .sidebar-brand {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: 1.5px;
+  }
+
+  .sidebar-brand span {
+    color: var(--mint);
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 10px 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+
+  .sidebar-section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.22);
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    padding: 14px 12px 5px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: background 0.18s, color 0.18s;
+    text-align: left;
+    width: 100%;
+  }
+
+  .sidebar-item svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.18s;
+  }
+
+  .sidebar-item:hover {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+  }
+
+  .sidebar-item:hover svg { opacity: 1; }
+
+  .sidebar-item.active {
+    background: rgba(69,178,157,0.14);
+    color: var(--mint);
+    font-weight: 600;
+  }
+
+  .sidebar-item.active svg { opacity: 1; }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin: 6px 10px;
+  }
+
+  .sidebar-footer {
+    padding: 12px 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--gradient);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.73rem;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar-user-name {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-user-role {
+    display: block;
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-logout-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.3);
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logout-btn:hover {
+    background: rgba(239,68,68,0.14);
+    color: #ef4444;
+  }
+
+  .sidebar-logout-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* Screens sit inside #main-content */
+  .screen {
+    background: var(--light);
+  }
+
+  /* More breathing room on desktop */
+  .screen-scroll {
+    padding: 32px 40px 32px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-200) transparent;
+  }
+
+  .screen-scroll::-webkit-scrollbar {
+    display: block;
+    width: 5px;
+  }
+
+  .screen-scroll::-webkit-scrollbar-track { background: transparent; }
+  .screen-scroll::-webkit-scrollbar-thumb {
+    background: var(--gray-200);
+    border-radius: 3px;
+  }
+
+  /* Hide mobile bottom nav */
+  #bottom-nav {
+    display: none !important;
+  }
+
+  /* ===== LOGIN DESKTOP ===== */
+  #screen-login .login-wrapper {
+    flex-direction: row;
+  }
+
+  #screen-login .login-illustration {
+    width: 46%;
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  #screen-login .login-form-area {
+    flex: 1;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 64px;
+    overflow-y: auto;
+  }
+
+  #screen-login .login-title { font-size: 1.8rem; }
+  #screen-login .login-subtitle { margin-bottom: 32px; }
+  #screen-login .btn-primary { padding: 16px; }
+
+  /* ===== DASHBOARD DESKTOP ===== */
+  .dashboard-header { margin-bottom: 28px; padding-top: 0; }
+  .dashboard-header h2 { font-size: 1.5rem; }
+
+  .stat-cards {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-value { font-size: 1.6rem; }
+
+  /* Charts in a 2-column row */
+  .desktop-charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .desktop-charts-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* AI insight cards in a 2-col grid */
+  .ai-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  /* Speed guard cards 3-up */
+  .sg-cards-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  /* Quick actions 6-up */
+  .quick-actions {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  /* ===== LEADS DESKTOP ===== */
+  .leads-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .lead-card { cursor: pointer; }
+
+  /* ===== AUTOMATIONS DESKTOP ===== */
+  .auto-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  /* Automation builder wider */
+  .auto-builder {
+    max-width: 600px;
+  }
+
+  /* ===== CAMPAIGNS DESKTOP ===== */
+  .camp-desktop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ===== POS / INVENTORY DESKTOP ===== */
+  .pos-stat-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .pos-products-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  /* ===== RECOVERY DESKTOP ===== */
+  .recovery-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .recovery-opps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* ===== ANALYTICS DESKTOP ===== */
+  .analytics-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ===== SETTINGS DESKTOP ===== */
+  .settings-desktop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* ===== AI CHAT (desktop: right-side panel) ===== */
+  .ai-chat-fab {
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .ai-chat-overlay {
+    display: none !important;
+  }
+
+  .ai-chat-panel {
+    width: 360px;
+    height: 520px;
+    left: auto;
+    right: 24px;
+    bottom: 96px;
+    border-radius: 16px;
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .ai-chat-panel.active {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+}

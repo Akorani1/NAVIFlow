@@ -129,15 +129,31 @@ function navigateTo(screenId, showNav = true) {
     currentScreen = screenId;
 
     const nav = document.getElementById('bottom-nav');
+    const sidebar = document.getElementById('desktop-sidebar');
+    const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login';
     const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-recovery', 'screen-settings'];
+
     if (showNav && navScreens.includes(screenId)) {
         nav.classList.remove('hidden');
-    } else if (screenId === 'screen-splash' || screenId === 'screen-login') {
+    } else if (!isAuthScreen) {
         nav.classList.add('hidden');
     }
 
-    // Update active tab
+    if (sidebar) {
+        if (isAuthScreen && showNav) {
+            sidebar.classList.add('visible');
+        } else if (!isAuthScreen) {
+            sidebar.classList.remove('visible');
+        }
+    }
+
+    // Update active tab in bottom nav
     document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.screen === screenId);
+    });
+
+    // Update active item in sidebar
+    document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.toggle('active', item.dataset.screen === screenId);
     });
 
@@ -948,7 +964,25 @@ function initSettings() {
     document.getElementById('btn-logout').addEventListener('click', () => {
         navigateTo('screen-login', false);
         document.getElementById('bottom-nav').classList.add('hidden');
+        document.getElementById('desktop-sidebar')?.classList.remove('visible');
     });
+}
+
+// ==================== DESKTOP SIDEBAR ====================
+function initSidebar() {
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', () => {
+            navigateTo(item.dataset.screen);
+        });
+    });
+
+    const logoutBtn = document.getElementById('sidebar-logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            navigateTo('screen-login', false);
+            document.getElementById('bottom-nav').classList.add('hidden');
+        });
+    }
 }
 
 // ==================== BOTTOM NAV ====================
@@ -989,6 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPOS();
     initRecovery();
     initSettings();
+    initSidebar();
     initBottomNav();
     initBackButtons();
     initPeriodButtons();
