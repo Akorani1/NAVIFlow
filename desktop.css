@@ -420,7 +420,80 @@
   }
 
   /* ===== SECTION HEADERS DESKTOP ===== */
-  .section-header h3 { font-size: 1.05rem; }
+  .section-header h3 { font-size: 1rem; }
+  .screen-top-bar h2 { font-size: 1.5rem; }
+  .screen-top-bar { padding-bottom: 22px; }
 
-  .screen-top-bar h2 { font-size: 1.4rem; }
+  /* ===== CARD HOVER EFFECTS ===== */
+  .stat-card:hover,
+  .ai-card:hover,
+  .lead-card:hover,
+  .auto-card:hover,
+  .qa-btn:hover,
+  .rc-card:hover,
+  .rec-opp-card:hover,
+  .pos-product-card:hover,
+  .active-rec-card:hover,
+  .perf-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+    border-color: rgba(69,178,157,0.12);
+  }
+
+  .lead-card:active,
+  .qa-btn:active,
+  .stat-card:active {
+    transform: translateY(0);
+  }
+
+  /* ===== DASHBOARD DESKTOP ===== */
+  .dashboard-header { margin-bottom: 28px; }
+  .dashboard-header h2 { font-size: 1.6rem; }
+
+  .stat-cards {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-value { font-size: 1.7rem; }
+  .stat-card { padding: 18px 16px 16px; }
+
+  /* ===== DESKTOP CHART CARDS ===== */
+  .chart-card { margin-bottom: 20px; padding: 20px; }
+
+  /* ===== DESKTOP SCREEN SCROLLING ===== */
+  .screen-scroll { padding: 36px 44px 36px; }
+
+  /* ===== SIDEBAR POLISH ===== */
+  #desktop-sidebar.visible {
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .sidebar-item {
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    border-radius: 10px;
+    gap: 11px;
+  }
+
+  .sidebar-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.85);
+  }
+
+  .sidebar-item.active {
+    background: rgba(69,178,157,0.15);
+    box-shadow: inset 0 0 0 1px rgba(69,178,157,0.2);
+  }
+
+  /* ===== LOGIN DESKTOP ===== */
+  #screen-login .login-form-area { padding: 0 72px; }
+  #screen-login .login-title { font-size: 2rem; }
+  #screen-login .login-subtitle { font-size: 0.88rem; margin-bottom: 32px; }
+
+  /* ===== BUTTON HOVER ON DESKTOP ===== */
+  .btn-primary:hover { opacity: 0.95; }
+  .btn-logout:hover { background: #fef2f2; }
+  .icon-btn:hover { background: var(--gray-100); }
 }
