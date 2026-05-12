@@ -2077,28 +2077,40 @@ function initAIChatbot() {
     const sendBtn = document.getElementById('ai-chat-send');
     const messagesEl = document.getElementById('ai-chat-messages');
 
-    fab.addEventListener('click', () => {
+    const resetPanelStyles = () => {
+        panel.style.bottom = '';
+        panel.style.height = '';
         panel.style.transform = '';
+    };
+
+    fab.addEventListener('click', () => {
+        resetPanelStyles();
         overlay.classList.add('active');
         panel.classList.add('active');
+        setTimeout(() => input.focus(), 450);
     });
 
     const closeChat = () => {
         overlay.classList.remove('active');
         panel.classList.remove('active');
         input.blur();
-        panel.style.transform = '';
+        setTimeout(resetPanelStyles, 400);
     };
 
-    // Lift panel above keyboard — correct formula using offsetTop
+    // Lift panel above keyboard using bottom+height (independent of the transform animation)
     const adjustForKeyboard = () => {
         if (!panel.classList.contains('active')) return;
         const vv = window.visualViewport;
         if (!vv) return;
-        const offset = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-        panel.style.transform = `translateY(-${offset}px)`;
-        panel.style.transition = offset > 0 ? 'transform 0.15s ease' : '';
-        setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+        const kbh = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+        if (kbh > 50) {
+            panel.style.bottom = `${kbh}px`;
+            panel.style.height = `${vv.height - 48}px`;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        } else {
+            panel.style.bottom = '';
+            panel.style.height = '';
+        }
     };
 
     if (window.visualViewport) {
@@ -2106,12 +2118,9 @@ function initAIChatbot() {
         window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
 
-    // Scroll input into view on focus (iOS fallback)
     input.addEventListener('focus', () => {
-        setTimeout(() => {
-            adjustForKeyboard();
-            input.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 300);
+        setTimeout(adjustForKeyboard, 100);
+        setTimeout(adjustForKeyboard, 350);
     });
 
     overlay.addEventListener('click', closeChat);
