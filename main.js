@@ -818,11 +818,20 @@ function initAutomations() {
 
 // ==================== CAMPAIGNS ====================
 function initCampaigns() {
-    // Tab switching
+    // Tab switching — toggle subject visibility for SMS
     document.querySelectorAll('.camp-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.camp-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
+            const isSMS = tab.dataset.tab === 'sms';
+            const subjectGroup = document.getElementById('camp-subject-group');
+            const msgLabel = document.getElementById('camp-msg-label');
+            const body = document.getElementById('camp-body');
+            if (subjectGroup) subjectGroup.style.display = isSMS ? 'none' : '';
+            if (msgLabel) msgLabel.textContent = isSMS ? 'SMS Message' : 'Message Body';
+            if (body) body.placeholder = isSMS
+                ? 'Write your SMS (160 chars max)...'
+                : 'Write your email body...';
         });
     });
 
@@ -842,17 +851,57 @@ function initCampaigns() {
         });
     });
 
+    // Sends stepper
+    const sendsInput = document.getElementById('camp-sends');
+    document.getElementById('camp-sends-minus')?.addEventListener('click', () => {
+        const v = parseInt(sendsInput.value) || 1;
+        if (v > 1) sendsInput.value = v - 1;
+    });
+    document.getElementById('camp-sends-plus')?.addEventListener('click', () => {
+        const v = parseInt(sendsInput.value) || 1;
+        if (v < 10) sendsInput.value = v + 1;
+    });
+
     // Launch button
     document.getElementById('btn-send-campaign').addEventListener('click', () => {
         const btn = document.getElementById('btn-send-campaign');
-        const campName = document.querySelector('.camp-input')?.value.trim() || 'Campaign';
-        const audience = document.querySelector('.audience-chip.selected')?.textContent?.trim() || 'All Leads';
+        const campName = document.getElementById('camp-name')?.value.trim() || 'Campaign';
+        const audienceChip = document.querySelector('.audience-chip.selected');
+        const audienceLabel = audienceChip?.childNodes[0]?.textContent?.trim() || 'All Leads';
+        const count = audienceChip?.dataset.count || '2847';
+        const sends = document.getElementById('camp-sends')?.value || '1';
+        const isEmail = document.querySelector('.camp-tab.active')?.dataset.tab !== 'sms';
+        const subject = document.getElementById('camp-subject')?.value.trim();
+        const body = document.getElementById('camp-body')?.value.trim();
+        if (!body) { showToast('Please write a message first', 'error'); return; }
+        if (isEmail && !subject) { showToast('Please add a subject line', 'error'); return; }
         btn.textContent = 'Launching...';
         btn.style.opacity = '0.7';
         setTimeout(() => {
             btn.textContent = '✓ Campaign Launched!';
             btn.style.background = 'linear-gradient(135deg, #45B29D, #9ED8C3)';
-            showToast(`"${campName}" sent to ${audience}`, 'success');
+            const type = isEmail ? 'Email' : 'SMS';
+            showToast(`"${campName}" — ${type} sent to ${Number(count).toLocaleString()} contacts (${sends}x)`, 'success');
+            // Prepend to recent campaigns list
+            const rc = document.querySelector('.recent-campaigns');
+            if (rc) {
+                const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const iconSvg = isEmail
+                    ? `<rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/>`
+                    : `<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>`;
+                rc.insertAdjacentHTML('afterbegin', `
+                    <div class="rc-card">
+                        <div class="rc-icon rc-${isEmail ? 'email' : 'sms'}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconSvg}</svg>
+                        </div>
+                        <div class="rc-info">
+                            <h4>${campName}</h4>
+                            <p>Sent to ${Number(count).toLocaleString()} leads - ${today}</p>
+                        </div>
+                        <span class="rc-stat">Sent ✓</span>
+                    </div>
+                `);
+            }
             setTimeout(() => {
                 btn.textContent = 'Launch Campaign';
                 btn.style.opacity = '1';
@@ -2337,31 +2386,105 @@ function initCampaignAddButton() {
             <div class="as-setting-form">
                 <label class="as-label">Campaign Name</label>
                 <input class="as-input" id="as-camp-name" placeholder="e.g. Summer Sale Blast" />
-                <label class="as-label">Type</label>
+                <label class="as-label">Channel</label>
                 <div class="as-tag-grid">
-                    <button class="as-tag-chip selected" data-type="email">Email</button>
-                    <button class="as-tag-chip" data-type="sms">SMS</button>
+                    <button class="as-tag-chip selected" data-type="email">📧 Email</button>
+                    <button class="as-tag-chip" data-type="sms">💬 SMS</button>
                 </div>
+                <div id="as-subject-wrap">
+                    <label class="as-label">Subject Line</label>
+                    <input class="as-input" id="as-camp-subject" placeholder="e.g. Exclusive offer just for you" />
+                </div>
+                <label class="as-label" id="as-msg-label">Message Body</label>
+                <textarea class="as-textarea" id="as-camp-body" rows="4" placeholder="Hi {name}, here's your exclusive offer..."></textarea>
                 <label class="as-label">Audience</label>
-                <input class="as-input" id="as-camp-audience" placeholder="e.g. All Leads, VIP, Hot Leads" />
-                <button class="as-send-btn" id="as-camp-create">Create Campaign</button>
+                <div class="as-tag-grid">
+                    <button class="as-tag-chip selected" data-aud="all" data-count="2847">All Leads</button>
+                    <button class="as-tag-chip" data-aud="hot" data-count="124">Hot Leads</button>
+                    <button class="as-tag-chip" data-aud="new" data-count="89">New This Week</button>
+                    <button class="as-tag-chip" data-aud="vip" data-count="43">VIP</button>
+                </div>
+                <label class="as-label">Number of Sends</label>
+                <div class="sends-row">
+                    <button class="sends-btn" id="as-sends-minus">−</button>
+                    <input type="number" class="sends-count" id="as-sends" value="1" min="1" max="10" />
+                    <button class="sends-btn" id="as-sends-plus">+</button>
+                    <span class="sends-hint">send(s) per contact</span>
+                </div>
+                <button class="as-send-btn" id="as-camp-launch" style="margin-top:12px">🚀 Launch Campaign</button>
             </div>
         `);
+
+        // Channel toggle
         document.querySelectorAll('.as-tag-chip[data-type]').forEach(c => {
             c.addEventListener('click', () => {
                 document.querySelectorAll('.as-tag-chip[data-type]').forEach(x => x.classList.remove('selected'));
                 c.classList.add('selected');
+                const isSMS = c.dataset.type === 'sms';
+                document.getElementById('as-subject-wrap').style.display = isSMS ? 'none' : '';
+                document.getElementById('as-msg-label').textContent = isSMS ? 'SMS Message' : 'Message Body';
+                document.getElementById('as-camp-body').placeholder = isSMS
+                    ? 'Write your SMS (160 chars max)...'
+                    : 'Hi {name}, here\'s your exclusive offer...';
             });
         });
-        document.getElementById('as-camp-create').addEventListener('click', () => {
+
+        // Audience toggle
+        document.querySelectorAll('.as-tag-chip[data-aud]').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('.as-tag-chip[data-aud]').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
+
+        // Sends stepper
+        const asSends = document.getElementById('as-sends');
+        document.getElementById('as-sends-minus').addEventListener('click', () => {
+            const v = parseInt(asSends.value) || 1;
+            if (v > 1) asSends.value = v - 1;
+        });
+        document.getElementById('as-sends-plus').addEventListener('click', () => {
+            const v = parseInt(asSends.value) || 1;
+            if (v < 10) asSends.value = v + 1;
+        });
+
+        document.getElementById('as-camp-launch').addEventListener('click', () => {
             const name = document.getElementById('as-camp-name').value.trim();
+            const body = document.getElementById('as-camp-body').value.trim();
+            const isEmail = document.querySelector('.as-tag-chip.selected[data-type]')?.dataset.type !== 'sms';
+            const subject = document.getElementById('as-camp-subject')?.value.trim();
             if (!name) { showToast('Please enter a campaign name', 'error'); return; }
-            const type = document.querySelector('.as-tag-chip.selected[data-type]')?.dataset.type || 'email';
+            if (!body) { showToast('Please write a message', 'error'); return; }
+            if (isEmail && !subject) { showToast('Please add a subject line', 'error'); return; }
+            const audChip = document.querySelector('.as-tag-chip.selected[data-aud]');
+            const count = audChip?.dataset.count || '2847';
+            const sends = asSends.value || '1';
+            const type = isEmail ? 'Email' : 'SMS';
             closeActionSheet();
-            showToast(`${type.toUpperCase()} campaign "${name}" created`);
-            // Pre-fill the campaign creator form
-            const nameInput = document.querySelector('.camp-input');
-            if (nameInput) { nameInput.value = name; nameInput.focus(); }
+            showToast(`${type} "${name}" sent to ${Number(count).toLocaleString()} contacts (${sends}x)`, 'success');
+            // Prepend to recent campaigns list
+            const rc = document.querySelector('.recent-campaigns');
+            if (rc) {
+                const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const iconSvg = isEmail
+                    ? `<rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/>`
+                    : `<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>`;
+                rc.insertAdjacentHTML('afterbegin', `
+                    <div class="rc-card">
+                        <div class="rc-icon rc-${isEmail ? 'email' : 'sms'}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconSvg}</svg>
+                        </div>
+                        <div class="rc-info">
+                            <h4>${name}</h4>
+                            <p>Sent to ${Number(count).toLocaleString()} leads - ${today}</p>
+                        </div>
+                        <span class="rc-stat">Sent ✓</span>
+                    </div>
+                `);
+            }
+            // Pre-fill the inline form too
+            const nameInput = document.getElementById('camp-name');
+            if (nameInput) nameInput.value = name;
         });
     });
 }

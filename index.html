@@ -779,15 +779,32 @@
         <div class="campaign-creator">
           <div class="input-group">
             <label>Campaign Name</label>
-            <input type="text" value="Spring Sale Follow-Up" class="camp-input" />
+            <input type="text" value="Spring Sale Follow-Up" class="camp-input" id="camp-name" />
           </div>
           <div class="input-group">
             <label>Audience</label>
             <div class="audience-select">
-              <div class="audience-chip selected">All Leads <span>2,847</span></div>
-              <div class="audience-chip">Hot Leads <span>124</span></div>
-              <div class="audience-chip">New This Week <span>89</span></div>
-              <div class="audience-chip">VIP <span>43</span></div>
+              <div class="audience-chip selected" data-count="2847">All Leads <span>2,847</span></div>
+              <div class="audience-chip" data-count="124">Hot Leads <span>124</span></div>
+              <div class="audience-chip" data-count="89">New This Week <span>89</span></div>
+              <div class="audience-chip" data-count="43">VIP <span>43</span></div>
+            </div>
+          </div>
+          <div class="input-group" id="camp-subject-group">
+            <label>Subject Line</label>
+            <input type="text" class="camp-input" id="camp-subject" value="Don't miss our Spring Sale 🌸" placeholder="Enter email subject..." />
+          </div>
+          <div class="input-group">
+            <label id="camp-msg-label">Message Body</label>
+            <textarea class="camp-textarea" id="camp-body" placeholder="Write your message here...">Hi {name}, we have an exclusive Spring Sale offer just for you! Tap to claim your discount before it expires.</textarea>
+          </div>
+          <div class="input-group">
+            <label>Number of Sends</label>
+            <div class="sends-row">
+              <button class="sends-btn" id="camp-sends-minus">−</button>
+              <input type="number" class="sends-count" id="camp-sends" value="1" min="1" max="10" />
+              <button class="sends-btn" id="camp-sends-plus">+</button>
+              <span class="sends-hint">send(s) per contact</span>
             </div>
           </div>
           <div class="input-group">
