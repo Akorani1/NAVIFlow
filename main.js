@@ -2076,34 +2076,41 @@ function initAIChatbot() {
     const messagesEl = document.getElementById('ai-chat-messages');
 
     fab.addEventListener('click', () => {
+        panel.style.transform = '';
         overlay.classList.add('active');
         panel.classList.add('active');
-        setTimeout(() => input.focus(), 400);
     });
 
     const closeChat = () => {
         overlay.classList.remove('active');
         panel.classList.remove('active');
         input.blur();
-        panel.style.bottom = '0';
-        panel.style.height = '';
+        panel.style.transform = '';
     };
 
-    // Lift panel above keyboard on mobile
+    // Lift panel above keyboard — correct formula using offsetTop
+    const adjustForKeyboard = () => {
+        if (!panel.classList.contains('active')) return;
+        const vv = window.visualViewport;
+        if (!vv) return;
+        const offset = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+        panel.style.transform = `translateY(-${offset}px)`;
+        panel.style.transition = offset > 0 ? 'transform 0.15s ease' : '';
+        setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 50);
+    };
+
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            if (!panel.classList.contains('active')) return;
-            const keyboardHeight = window.innerHeight - window.visualViewport.height;
-            if (keyboardHeight > 100) {
-                panel.style.bottom = keyboardHeight + 'px';
-                panel.style.height = (window.visualViewport.height * 0.9) + 'px';
-            } else {
-                panel.style.bottom = '0';
-                panel.style.height = '';
-            }
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-        });
+        window.visualViewport.addEventListener('resize', adjustForKeyboard);
+        window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
+
+    // Scroll input into view on focus (iOS fallback)
+    input.addEventListener('focus', () => {
+        setTimeout(() => {
+            adjustForKeyboard();
+            input.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 300);
+    });
 
     overlay.addEventListener('click', closeChat);
     closeBtn.addEventListener('click', closeChat);
