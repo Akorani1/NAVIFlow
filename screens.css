@@ -2229,7 +2229,7 @@
 }
 
 .ai-chat-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(4px);
@@ -2246,7 +2246,7 @@
 }
 
 .ai-chat-panel {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
@@ -2390,9 +2390,10 @@
 .ai-chat-input-bar {
     display: flex;
     gap: 8px;
-    padding: 10px 16px 14px;
+    padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--gray-100);
     flex-shrink: 0;
+    background: var(--white);
 }
 
 .ai-chat-input-bar input {

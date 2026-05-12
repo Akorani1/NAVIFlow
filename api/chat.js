@@ -1,7 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const SYSTEM_PROMPT = `You are NaviAI, an intelligent business assistant embedded in NaviFlow CRM. You help business owners understand their data, identify opportunities, and take action.
 
 You have access to real-time data from the user's NaviFlow dashboard including leads, revenue, inventory, and recovery opportunities. When answering questions, reference specific numbers from the context provided.
@@ -32,28 +28,33 @@ export default async function handler(req, res) {
     : '';
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      system: [
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [
-        {
-          role: 'user',
-          content: `${contextBlock}User question: ${message}`,
-        },
-      ],
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 256,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `${contextBlock}User question: ${message}` },
+        ],
+      }),
     });
 
-    const text = response.content[0]?.text ?? "I couldn't generate a response right now.";
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Groq API error:', err);
+      return res.status(500).json({ error: 'AI service unavailable', details: err });
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content ?? "I couldn't generate a response right now.";
     return res.status(200).json({ response: text });
   } catch (err) {
-    console.error('Claude API error:', err);
+    console.error('Groq fetch error:', err);
     return res.status(500).json({ error: 'AI service unavailable', details: err.message });
   }
 }

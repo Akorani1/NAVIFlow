@@ -369,7 +369,7 @@ function drawDashboardRevenueChart() {
         const y = padding.top + chartH - (val / maxVal) * chartH;
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#white';
+        ctx.fillStyle = 'white';
         ctx.fill();
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#10b981';
@@ -549,6 +549,53 @@ function drawLeadGrowthChart() {
 function initLeads() {
     renderLeads(leadsData);
 
+    // + button — add new lead
+    document.getElementById('btn-add-lead')?.addEventListener('click', () => {
+        showActionSheet('Add New Lead', `
+            <div class="as-setting-form">
+                <label class="as-label">Full Name</label>
+                <input class="as-input" id="as-lead-name2" placeholder="e.g. Jane Smith" />
+                <label class="as-label">Email</label>
+                <input class="as-input" id="as-lead-email2" placeholder="jane@company.com" />
+                <label class="as-label">Phone</label>
+                <input class="as-input" id="as-lead-phone2" placeholder="+1 (555) 000-0000" />
+                <label class="as-label">Role / Company</label>
+                <input class="as-input" id="as-lead-role2" placeholder="e.g. CEO at Acme Inc." />
+                <label class="as-label">Status</label>
+                <div class="as-tag-grid" id="as-lead-status-chips">
+                    <button class="as-tag-chip selected" data-status="new">New</button>
+                    <button class="as-tag-chip" data-status="contacted">Contacted</button>
+                    <button class="as-tag-chip" data-status="converted">Converted</button>
+                </div>
+                <button class="as-send-btn" id="as-lead-add2">Add Lead</button>
+            </div>
+        `);
+        document.querySelectorAll('#as-lead-status-chips .as-tag-chip').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('#as-lead-status-chips .as-tag-chip').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
+        document.getElementById('as-lead-add2').addEventListener('click', () => {
+            const name = document.getElementById('as-lead-name2').value.trim();
+            const email = document.getElementById('as-lead-email2').value.trim();
+            if (!name || !email) { showToast('Name and email are required', 'error'); return; }
+            const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            const colors = ['#2F6FA3', '#45B29D', '#1E3A5F', '#9ED8C3'];
+            const status = document.querySelector('#as-lead-status-chips .as-tag-chip.selected')?.dataset.status || 'new';
+            const newLead = {
+                id: leadsData.length + 1, name, initials, email,
+                phone: document.getElementById('as-lead-phone2').value.trim() || 'N/A',
+                role: document.getElementById('as-lead-role2').value.trim() || 'New Contact',
+                status, tags: ['New'], color: colors[leadsData.length % colors.length], conversation: []
+            };
+            leadsData.unshift(newLead);
+            renderLeads(leadsData);
+            closeActionSheet();
+            showToast(`${name} added to leads`);
+        });
+    });
+
     // Search
     document.getElementById('leads-search').addEventListener('input', (e) => {
         const q = e.target.value.toLowerCase();
@@ -598,6 +645,7 @@ function renderLeads(leads) {
 }
 
 function showLeadDetail(lead) {
+    currentLead = lead;
     document.getElementById('lead-detail-avatar').textContent = lead.initials;
     document.getElementById('lead-detail-avatar').style.background = `linear-gradient(135deg, ${lead.color}, #45B29D)`;
     document.getElementById('lead-detail-name').textContent = lead.name;
@@ -702,6 +750,68 @@ function initAutomations() {
     document.querySelectorAll('.auto-node').forEach((node, i) => {
         node.style.animation = `slideIn 0.4s ease-out ${i * 0.1}s both`;
     });
+
+    // + button — open new automation sheet
+    document.getElementById('btn-add-auto')?.addEventListener('click', () => {
+        showActionSheet('New Automation', `
+            <div class="as-setting-form">
+                <label class="as-label">Automation Name</label>
+                <input class="as-input" id="as-auto-name" placeholder="e.g. New Lead Follow-Up" />
+                <label class="as-label">Trigger</label>
+                <div class="as-tag-grid" id="as-auto-triggers">
+                    <button class="as-tag-chip selected" data-trigger="new-lead">New Lead Added</button>
+                    <button class="as-tag-chip" data-trigger="no-reply">No Reply 24h</button>
+                    <button class="as-tag-chip" data-trigger="tag-added">Tag Added</button>
+                    <button class="as-tag-chip" data-trigger="purchase">Purchase Made</button>
+                </div>
+                <label class="as-label">First Action</label>
+                <div class="as-tag-grid" id="as-auto-actions">
+                    <button class="as-tag-chip selected" data-action="send-email">Send Email</button>
+                    <button class="as-tag-chip" data-action="send-sms">Send SMS</button>
+                    <button class="as-tag-chip" data-action="add-tag">Add Tag</button>
+                    <button class="as-tag-chip" data-action="wait">Wait</button>
+                </div>
+                <button class="as-send-btn" id="as-auto-create">Create Automation</button>
+            </div>
+        `);
+        document.querySelectorAll('#as-auto-triggers .as-tag-chip').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('#as-auto-triggers .as-tag-chip').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
+        document.querySelectorAll('#as-auto-actions .as-tag-chip').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('#as-auto-actions .as-tag-chip').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
+        document.getElementById('as-auto-create').addEventListener('click', () => {
+            const name = document.getElementById('as-auto-name').value.trim();
+            if (!name) { showToast('Please enter a name', 'error'); return; }
+            const trigger = document.querySelector('#as-auto-triggers .as-tag-chip.selected')?.textContent || 'New Lead Added';
+            closeActionSheet();
+            showToast(`Automation "${name}" created`);
+            // Add a card to the auto-list
+            const list = document.querySelector('.auto-list');
+            if (list) {
+                const card = document.createElement('div');
+                card.className = 'auto-card';
+                card.style.animation = 'slideIn 0.3s ease-out both';
+                card.innerHTML = `
+                    <div class="auto-card-header">
+                        <div class="auto-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div class="auto-toggle active"><div class="toggle-dot"></div></div>
+                    </div>
+                    <h4 class="auto-card-name">${name}</h4>
+                    <p class="auto-card-trigger">Trigger: ${trigger}</p>
+                    <div class="auto-card-stats"><span>0 runs</span><span class="auto-card-status active-status">Active</span></div>
+                `;
+                list.insertBefore(card, list.firstChild);
+                card.querySelector('.auto-toggle').addEventListener('click', e => { e.stopPropagation(); card.querySelector('.auto-toggle').classList.toggle('active'); });
+            }
+        });
+    });
 }
 
 // ==================== CAMPAIGNS ====================
@@ -733,16 +843,19 @@ function initCampaigns() {
     // Launch button
     document.getElementById('btn-send-campaign').addEventListener('click', () => {
         const btn = document.getElementById('btn-send-campaign');
+        const campName = document.querySelector('.camp-input')?.value.trim() || 'Campaign';
+        const audience = document.querySelector('.audience-chip.selected')?.textContent?.trim() || 'All Leads';
         btn.textContent = 'Launching...';
         btn.style.opacity = '0.7';
         setTimeout(() => {
-            btn.textContent = 'Campaign Launched!';
+            btn.textContent = '✓ Campaign Launched!';
             btn.style.background = 'linear-gradient(135deg, #45B29D, #9ED8C3)';
+            showToast(`"${campName}" sent to ${audience}`, 'success');
             setTimeout(() => {
                 btn.textContent = 'Launch Campaign';
                 btn.style.opacity = '1';
                 btn.style.background = '';
-            }, 2000);
+            }, 2500);
         }, 1500);
     });
 }
@@ -1358,22 +1471,48 @@ function renderRecoveryOpportunities(data = recoveryData) {
             const opp = recoveryData.find(r => r.id === id);
             if (!opp) return;
 
-            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="spin-icon" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Sending...';
-            btn.style.opacity = '0.7';
+            showActionSheet(`Send Recovery Message to ${opp.name}`, `
+                <div style="margin-bottom:14px">
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">AI-Crafted Message</div>
+                    <div style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:10px;padding:12px;font-size:0.84rem;color:var(--dark);line-height:1.5">"${opp.aiMessage}"</div>
+                </div>
+                <div style="margin-bottom:16px">
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Why This Works</div>
+                    <p style="font-size:0.8rem;color:var(--gray-500);line-height:1.5">${opp.aiAnalysis}</p>
+                </div>
+                <button class="as-send-btn" id="as-rec-send" style="margin-top:0">Send via ${opp.campaignType === 'discount' ? 'Email' : 'SMS'}</button>
+            `);
 
-            setTimeout(() => {
-                opp.status = 'recovering';
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovery Sent!';
-                btn.classList.add('btn-recovering');
-                btn.style.opacity = '1';
-                btn.disabled = true;
+            document.getElementById('as-rec-send').addEventListener('click', () => {
+                closeActionSheet();
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="spin-icon" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Sending...';
+                btn.style.opacity = '0.7';
 
-                // Update the status badge
-                const card = btn.closest('.lost-opp-card');
-                const statusEl = card.querySelector('.lost-opp-status');
-                statusEl.className = 'lost-opp-status rec-status-recovering';
-                statusEl.textContent = 'Recovering';
-            }, 1200);
+                setTimeout(() => {
+                    opp.status = 'recovering';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Sent!';
+                    btn.style.opacity = '1';
+                    btn.disabled = true;
+                    showToast(`Recovery message sent to ${opp.name}`);
+
+                    const card = btn.closest('.lost-opp-card');
+                    const statusEl = card?.querySelector('.lost-opp-status');
+                    if (statusEl) { statusEl.className = 'lost-opp-status rec-status-recovering'; statusEl.textContent = 'Recovering'; }
+
+                    // Simulate lead responding after a delay
+                    setTimeout(() => {
+                        opp.status = 'recovered';
+                        recoveryStats.recoveredThisWeek += opp.value;
+                        recoveryStats.atRisk = Math.max(0, recoveryStats.atRisk - opp.value);
+                        recoveryStats.pendingCount = Math.max(0, recoveryStats.pendingCount - 1);
+                        if (statusEl) { statusEl.className = 'lost-opp-status rec-status-recovered'; statusEl.textContent = 'Recovered'; }
+                        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovered';
+                        btn.classList.add('btn-recovered');
+                        showToast(`${opp.name} recovered — $${opp.value.toLocaleString()} won back!`, 'success');
+                        animateRecoveryCounters();
+                    }, 4000);
+                }, 1200);
+            });
         });
     });
 }
@@ -1613,15 +1752,43 @@ function initPOS() {
     document.getElementById('pos-process-sale').addEventListener('click', () => {
         const btn = document.getElementById('pos-process-sale');
         const productId = document.getElementById('pos-sale-product').value;
-        if (!productId) return;
+        const qty = parseInt(qtyInput.value) || 1;
+        if (!productId) { showToast('Please select a product', 'error'); return; }
+
+        const product = inventoryData.find(p => p.id === parseInt(productId));
+        if (!product) return;
+        if (product.stock < qty) { showToast(`Only ${product.stock} units in stock`, 'error'); return; }
 
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="spin-icon"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Processing...';
         btn.style.opacity = '0.8';
 
         setTimeout(() => {
+            // Deduct stock
+            product.stock -= qty;
+            const total = (product.price * qty).toFixed(2);
+            const orderNum = 'NF-' + Math.floor(1900 + Math.random() * 100);
+
             btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> Sale Complete!';
             btn.classList.add('success');
             btn.style.opacity = '1';
+
+            // Add transaction to list
+            const txnList = document.getElementById('pos-transactions');
+            if (txnList) {
+                const txn = document.createElement('div');
+                txn.className = 'pos-txn-card';
+                txn.style.animation = 'slideIn 0.3s ease-out both';
+                txn.innerHTML = `
+                    <div class="pos-txn-icon txn-sale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="pos-txn-info"><h4>${product.name} x${qty}</h4><p>Order #${orderNum} - Just now</p></div>
+                    <span class="pos-txn-amount">+$${total}</span>
+                `;
+                txnList.insertBefore(txn, txnList.firstChild);
+            }
+
+            renderProducts(inventoryData);
+            drawStockChart();
+            showToast(`Sale complete — ${product.name} x${qty} · $${total}`);
 
             setTimeout(() => {
                 btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> Process Sale';
@@ -1632,7 +1799,7 @@ function initPOS() {
                 document.getElementById('pos-sale-product').value = '';
                 document.getElementById('pos-sale-total').textContent = '$0.00';
             }, 1500);
-        }, 1000);
+        }, 800);
     });
 }
 
@@ -1649,6 +1816,9 @@ function renderProducts(products) {
 
         return `
         <div class="pos-product-card" style="animation-delay: ${i * 0.06}s" data-product-id="${p.id}">
+            <button class="pos-card-delete" data-delete-id="${p.id}" title="Delete product">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
             <div class="pos-product-thumb" style="background: ${p.gradient}">
                 ${getProductIcon(p.icon)}
             </div>
@@ -1665,6 +1835,63 @@ function renderProducts(products) {
             </div>
         </div>`;
     }).join('');
+
+    // Delete buttons
+    grid.querySelectorAll('.pos-card-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.deleteId);
+            const product = inventoryData.find(p => p.id === id);
+            if (!product) return;
+            showActionSheet(`Delete "${product.name}"?`, `
+                <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:20px;line-height:1.5">This will permanently remove <strong>${product.name}</strong> (${product.sku}) from your inventory. This cannot be undone.</p>
+                <button class="as-send-btn" id="as-confirm-delete" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">Delete Product</button>
+            `);
+            document.getElementById('as-confirm-delete').addEventListener('click', () => {
+                const idx = inventoryData.findIndex(p => p.id === id);
+                if (idx !== -1) inventoryData.splice(idx, 1);
+                renderProducts(inventoryData);
+                populateSaleDropdown();
+                drawStockChart();
+                closeActionSheet();
+                showToast(`"${product.name}" deleted`, 'error');
+            });
+        });
+    });
+
+    // Card click = edit
+    grid.querySelectorAll('.pos-product-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.pos-card-delete')) return;
+            const id = parseInt(card.dataset.productId);
+            const p = inventoryData.find(x => x.id === id);
+            if (!p) return;
+            showActionSheet(`Edit "${p.name}"`, `
+                <div class="as-setting-form">
+                    <label class="as-label">Product Name</label>
+                    <input class="as-input" id="as-edit-name" value="${p.name}" />
+                    <label class="as-label">Price ($)</label>
+                    <input class="as-input" type="number" id="as-edit-price" value="${p.price.toFixed(2)}" step="0.01" min="0" />
+                    <label class="as-label">Stock Quantity</label>
+                    <input class="as-input" type="number" id="as-edit-stock" value="${p.stock}" min="0" />
+                    <label class="as-label">Max Stock</label>
+                    <input class="as-input" type="number" id="as-edit-maxstock" value="${p.maxStock}" min="0" />
+                    <button class="as-send-btn" id="as-edit-save">Save Changes</button>
+                </div>
+            `);
+            document.getElementById('as-edit-save').addEventListener('click', () => {
+                p.name = document.getElementById('as-edit-name').value.trim() || p.name;
+                p.price = parseFloat(document.getElementById('as-edit-price').value) || p.price;
+                p.stock = parseInt(document.getElementById('as-edit-stock').value) || 0;
+                p.maxStock = parseInt(document.getElementById('as-edit-maxstock').value) || p.maxStock;
+                renderProducts(inventoryData);
+                populateSaleDropdown();
+                drawStockChart();
+                closeActionSheet();
+                showToast(`"${p.name}" updated`);
+            });
+        });
+    });
 
     // Animate stock bars after a brief delay
     requestAnimationFrame(() => {
@@ -1701,6 +1928,7 @@ function animatePOSCounters() {
 
 function populateSaleDropdown() {
     const sel = document.getElementById('pos-sale-product');
+    sel.innerHTML = '<option value="">Select a product...</option>';
     inventoryData.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
@@ -1806,6 +2034,36 @@ function drawStockChart() {
     });
 }
 
+// ==================== AI SMART FALLBACK ====================
+function smartFallback(text, ctx) {
+    const q = text.toLowerCase();
+    if (q.includes('lead') && (q.includes('how many') || q.includes('total') || q.includes('count'))) {
+        return `You currently have ${ctx.totalLeads} leads in your pipeline — ${ctx.vipLeads} VIP and ${ctx.hotLeads} marked hot. Your top priority should be following up with any contacted leads who haven't responded in 48+ hours.`;
+    }
+    if (q.includes('revenue') || q.includes('sales') || q.includes('money')) {
+        return `Your weekly revenue is $${(ctx.weeklyRevenue || 24680).toLocaleString()}, up ${ctx.revenueGrowth || '12%'} from last week. To accelerate growth, consider launching a targeted campaign at your VIP leads — they typically convert at 3x the rate.`;
+    }
+    if (q.includes('stock') || q.includes('inventory') || q.includes('low')) {
+        const low = ctx.lowStockItems || [];
+        if (low.length > 0) return `You have ${low.length} items running low on stock: ${low.slice(0, 3).map(i => i.name).join(', ')}. Reorder these now to avoid missed sales — low stock items account for a disproportionate share of lost revenue.`;
+        return `All inventory levels look healthy right now. Keep an eye on fast-moving items and set reorder alerts at 20% stock level.`;
+    }
+    if (q.includes('recover') || q.includes('lost') || q.includes('churn')) {
+        return `You have $${(ctx.recoveryAtRisk || 30000).toLocaleString()} at risk from dropped leads. Your current recovery rate is ${ctx.recoveryRate || 27}%. Sending a personalized discount to price-hesitant leads is your highest-ROI action right now.`;
+    }
+    if (q.includes('campaign') || q.includes('email') || q.includes('sms')) {
+        return `Your best-performing campaigns target VIP leads with personalized subject lines. SMS campaigns see 3x higher open rates than email for follow-ups. I'd recommend sending a "slot-save" SMS to your hottest leads today.`;
+    }
+    if (q.includes('automat')) {
+        return `Automation is your biggest time-saver. Your "New Lead Welcome" automation is active and running. Consider adding a 48-hour follow-up sequence for leads who open emails but don't respond — that's typically your highest conversion opportunity.`;
+    }
+    const greetings = ['hi', 'hello', 'hey', 'what can you do', 'help'];
+    if (greetings.some(g => q.includes(g))) {
+        return `Hi! I'm NaviAI. I can help you analyze your ${ctx.totalLeads} leads, track revenue trends, manage inventory, and recover lost opportunities. Try asking "How are my leads doing?" or "What should I focus on today?"`;
+    }
+    return `Based on your current data: ${ctx.totalLeads} leads, $${(ctx.weeklyRevenue || 24680).toLocaleString()} weekly revenue, and ${(ctx.lowStockItems || []).length} low-stock items. Your biggest opportunity right now is the $${(ctx.recoveryAtRisk || 30000).toLocaleString()} in recoverable revenue. Want me to break down any of these areas?`;
+}
+
 // ==================== AI CHATBOT ====================
 function initAIChatbot() {
     const fab = document.getElementById('ai-chat-fab');
@@ -1820,12 +2078,32 @@ function initAIChatbot() {
     fab.addEventListener('click', () => {
         overlay.classList.add('active');
         panel.classList.add('active');
+        setTimeout(() => input.focus(), 400);
     });
 
     const closeChat = () => {
         overlay.classList.remove('active');
         panel.classList.remove('active');
+        input.blur();
+        panel.style.bottom = '0';
+        panel.style.height = '';
     };
+
+    // Lift panel above keyboard on mobile
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (!panel.classList.contains('active')) return;
+            const keyboardHeight = window.innerHeight - window.visualViewport.height;
+            if (keyboardHeight > 100) {
+                panel.style.bottom = keyboardHeight + 'px';
+                panel.style.height = (window.visualViewport.height * 0.9) + 'px';
+            } else {
+                panel.style.bottom = '0';
+                panel.style.height = '';
+            }
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
+    }
 
     overlay.addEventListener('click', closeChat);
     closeBtn.addEventListener('click', closeChat);
@@ -1878,15 +2156,16 @@ function initAIChatbot() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text, context: buildContext() }),
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            const reply = data.response || "I couldn't get a response right now. Please try again.";
+            const reply = data.response || smartFallback(text, buildContext());
             const ind = document.getElementById(typingId);
             if (ind) ind.remove();
             appendMessage(reply, 'bot');
         } catch {
             const ind = document.getElementById(typingId);
             if (ind) ind.remove();
-            appendMessage("Sorry, I'm having trouble connecting right now. Please try again.", 'bot');
+            appendMessage(smartFallback(text, buildContext()), 'bot');
         } finally {
             sendBtn.disabled = false;
         }
@@ -1901,3 +2180,456 @@ function initAIChatbot() {
         chip.addEventListener('click', () => handleSend(chip.dataset.prompt));
     });
 }
+
+// ==================== TOAST ====================
+let _toastTimer = null;
+function showToast(message, type = 'success') {
+    const el = document.getElementById('app-toast');
+    if (!el) return;
+    if (_toastTimer) clearTimeout(_toastTimer);
+    el.textContent = message;
+    el.className = `app-toast toast-${type} visible`;
+    _toastTimer = setTimeout(() => {
+        el.classList.remove('visible');
+    }, 3000);
+}
+
+// ==================== ACTION SHEET ====================
+function showActionSheet(title, html) {
+    const overlay = document.getElementById('action-sheet-overlay');
+    document.getElementById('action-sheet-title').textContent = title;
+    document.getElementById('action-sheet-body').innerHTML = html;
+    overlay.classList.add('active');
+}
+function closeActionSheet() {
+    document.getElementById('action-sheet-overlay').classList.remove('active');
+}
+
+// ==================== CURRENT LEAD TRACKING ====================
+let currentLead = null;
+
+// ==================== LEAD ACTIONS ====================
+function initLeadActions() {
+    document.querySelector('.ab-sms').addEventListener('click', () => {
+        if (!currentLead) return;
+        showActionSheet(`SMS to ${currentLead.name}`, `
+            <label class="as-label">To</label>
+            <input class="as-input" value="${currentLead.phone}" readonly />
+            <label class="as-label">Message</label>
+            <textarea class="as-textarea" id="as-sms-body" placeholder="Type your SMS message...">Hi ${currentLead.name.split(' ')[0]}, just following up on your inquiry. Let me know if you have any questions!</textarea>
+            <button class="as-send-btn" id="as-sms-send">Send SMS</button>
+        `);
+        document.getElementById('as-sms-send').addEventListener('click', () => {
+            const body = document.getElementById('as-sms-body').value.trim();
+            if (!body) return;
+            currentLead.conversation.push({ sender: 'user', text: body, time: 'Just now' });
+            addTimelineEntry(currentLead, 'sms', 'SMS Sent', body.substring(0, 60) + (body.length > 60 ? '...' : ''));
+            closeActionSheet();
+            showToast(`SMS sent to ${currentLead.name}`);
+        });
+    });
+
+    document.querySelector('.ab-email').addEventListener('click', () => {
+        if (!currentLead) return;
+        showActionSheet(`Email to ${currentLead.name}`, `
+            <label class="as-label">To</label>
+            <input class="as-input" value="${currentLead.email}" readonly />
+            <label class="as-label">Subject</label>
+            <input class="as-input" id="as-email-subject" value="Following up on your inquiry" />
+            <label class="as-label">Message</label>
+            <textarea class="as-textarea" id="as-email-body" placeholder="Write your email..." style="min-height:120px">Hi ${currentLead.name.split(' ')[0]},\n\nThank you for your interest. I wanted to follow up and see how we can help you move forward.\n\nLooking forward to hearing from you!</textarea>
+            <button class="as-send-btn" id="as-email-send">Send Email</button>
+        `);
+        document.getElementById('as-email-send').addEventListener('click', () => {
+            const subject = document.getElementById('as-email-subject').value.trim();
+            const body = document.getElementById('as-email-body').value.trim();
+            if (!body) return;
+            addTimelineEntry(currentLead, 'email', 'Email Sent', subject || body.substring(0, 60));
+            closeActionSheet();
+            showToast(`Email sent to ${currentLead.name}`);
+        });
+    });
+
+    document.querySelector('.ab-note').addEventListener('click', () => {
+        if (!currentLead) return;
+        showActionSheet(`Add Note for ${currentLead.name}`, `
+            <label class="as-label">Note</label>
+            <textarea class="as-textarea" id="as-note-body" placeholder="Add a note about this lead..." style="min-height:120px"></textarea>
+            <button class="as-send-btn" id="as-note-save">Save Note</button>
+        `);
+        document.getElementById('as-note-save').addEventListener('click', () => {
+            const body = document.getElementById('as-note-body').value.trim();
+            if (!body) return;
+            addTimelineEntry(currentLead, 'note', 'Note Added', body);
+            closeActionSheet();
+            showToast('Note saved');
+        });
+    });
+
+    document.querySelector('.ab-tag').addEventListener('click', () => {
+        if (!currentLead) return;
+        const allTags = ['VIP', 'Enterprise', 'Hot Lead', 'SaaS', 'Agency', 'Referral', 'Priority', 'Tech', 'Inbound', 'E-commerce', 'Retail', 'Health', 'Q1 Campaign', 'Q2 Campaign', 'Follow-Up', 'Closed'];
+        const chips = allTags.map(tag => {
+            const sel = currentLead.tags.includes(tag) ? ' selected' : '';
+            return `<button class="as-tag-chip${sel}" data-tag="${tag}">${tag}</button>`;
+        }).join('');
+        showActionSheet(`Tags for ${currentLead.name}`, `
+            <label class="as-label">Select Tags</label>
+            <div class="as-tag-grid">${chips}</div>
+            <button class="as-send-btn" id="as-tag-save">Save Tags</button>
+        `);
+        document.querySelectorAll('.as-tag-chip').forEach(chip => {
+            chip.addEventListener('click', () => chip.classList.toggle('selected'));
+        });
+        document.getElementById('as-tag-save').addEventListener('click', () => {
+            const selected = [...document.querySelectorAll('.as-tag-chip.selected')].map(c => c.dataset.tag);
+            currentLead.tags = selected;
+            document.getElementById('lead-detail-tags').innerHTML = selected.map(t => `<span class="tag">${t}</span>`).join('');
+            closeActionSheet();
+            showToast('Tags updated');
+        });
+    });
+}
+
+function addTimelineEntry(lead, type, typeName, text) {
+    const timeline = document.getElementById('lead-timeline');
+    if (!timeline) return;
+    const entry = document.createElement('div');
+    entry.className = `timeline-item ti-${type}`;
+    entry.style.animation = 'slideIn 0.3s ease-out both';
+    entry.innerHTML = `
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+            <div class="tl-header"><span class="tl-type">${typeName}</span><span class="tl-time">Just now</span></div>
+            <p>${text}</p>
+        </div>
+    `;
+    timeline.insertBefore(entry, timeline.firstChild);
+
+    // Switch to timeline tab
+    document.querySelector('[data-ld-tab="timeline"]')?.click();
+}
+
+// ==================== CAMPAIGN + BUTTON ====================
+function initCampaignAddButton() {
+    const btn = document.querySelector('#screen-campaigns .icon-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        showActionSheet('New Campaign', `
+            <div class="as-setting-form">
+                <label class="as-label">Campaign Name</label>
+                <input class="as-input" id="as-camp-name" placeholder="e.g. Summer Sale Blast" />
+                <label class="as-label">Type</label>
+                <div class="as-tag-grid">
+                    <button class="as-tag-chip selected" data-type="email">Email</button>
+                    <button class="as-tag-chip" data-type="sms">SMS</button>
+                </div>
+                <label class="as-label">Audience</label>
+                <input class="as-input" id="as-camp-audience" placeholder="e.g. All Leads, VIP, Hot Leads" />
+                <button class="as-send-btn" id="as-camp-create">Create Campaign</button>
+            </div>
+        `);
+        document.querySelectorAll('.as-tag-chip[data-type]').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('.as-tag-chip[data-type]').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
+        document.getElementById('as-camp-create').addEventListener('click', () => {
+            const name = document.getElementById('as-camp-name').value.trim();
+            if (!name) { showToast('Please enter a campaign name', 'error'); return; }
+            const type = document.querySelector('.as-tag-chip.selected[data-type]')?.dataset.type || 'email';
+            closeActionSheet();
+            showToast(`${type.toUpperCase()} campaign "${name}" created`);
+            // Pre-fill the campaign creator form
+            const nameInput = document.querySelector('.camp-input');
+            if (nameInput) { nameInput.value = name; nameInput.focus(); }
+        });
+    });
+}
+
+// ==================== ADD NODE (AUTOMATIONS) ====================
+function initAddNode() {
+    const btn = document.getElementById('btn-add-node');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        showActionSheet('Add Automation Node', `
+            <div class="as-node-list">
+                <button class="as-node-opt" data-node-type="send-email">
+                    <div class="as-node-icon" style="background: linear-gradient(135deg,#2F6FA3,#1E3A5F)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+                    </div>
+                    Send Email
+                </button>
+                <button class="as-node-opt" data-node-type="send-sms">
+                    <div class="as-node-icon" style="background: linear-gradient(135deg,#45B29D,#2F6FA3)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    </div>
+                    Send SMS
+                </button>
+                <button class="as-node-opt" data-node-type="wait">
+                    <div class="as-node-icon" style="background: linear-gradient(135deg,#f59e0b,#d97706)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    Wait / Delay
+                </button>
+                <button class="as-node-opt" data-node-type="condition">
+                    <div class="as-node-icon" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    Condition / Branch
+                </button>
+                <button class="as-node-opt" data-node-type="tag">
+                    <div class="as-node-icon" style="background: linear-gradient(135deg,#45B29D,#9ED8C3)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    </div>
+                    Add / Remove Tag
+                </button>
+            </div>
+        `);
+        document.querySelectorAll('.as-node-opt').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const type = opt.dataset.nodeType;
+                appendAutomationNode(type, opt.querySelector('div + *')?.textContent?.trim() || type);
+                closeActionSheet();
+            });
+        });
+    });
+}
+
+const nodeTypeLabels = {
+    'send-email': 'Send Email',
+    'send-sms': 'Send SMS',
+    'wait': 'Wait 24 Hours',
+    'condition': 'Check Condition',
+    'tag': 'Add Tag'
+};
+
+function appendAutomationNode(type, label) {
+    const builder = document.querySelector('.auto-builder');
+    if (!builder) return;
+    const addBtn = document.getElementById('btn-add-node');
+
+    const connectorEl = document.createElement('div');
+    connectorEl.className = 'node-connector';
+    connectorEl.innerHTML = '<div class="connector-line"></div><div class="connector-dot"></div>';
+
+    const nodeClassMap = { 'send-email': 'node-action', 'send-sms': 'node-action', 'wait': 'node-wait', 'condition': 'node-condition', 'tag': 'node-action' };
+    const nodeEl = document.createElement('div');
+    nodeEl.className = `auto-node ${nodeClassMap[type] || 'node-action'}`;
+    nodeEl.style.animation = 'slideIn 0.4s ease-out both';
+    nodeEl.innerHTML = `
+        <div class="node-icon">${opt_icon_for(type)}</div>
+        <div class="node-label">
+            <span class="node-type">${type === 'wait' ? 'Wait' : type === 'condition' ? 'Condition' : 'Action'}</span>
+            <span class="node-name">${nodeTypeLabels[type] || label}</span>
+        </div>
+    `;
+
+    builder.insertBefore(connectorEl, addBtn);
+    builder.insertBefore(nodeEl, addBtn);
+    showToast(`"${nodeTypeLabels[type] || label}" node added`);
+}
+
+function opt_icon_for(type) {
+    const icons = {
+        'send-email': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>',
+        'send-sms': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+        'wait': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        'condition': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        'tag': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+    };
+    return icons[type] || icons['send-email'];
+}
+
+// ==================== SETTINGS INTERACTIVE ROWS ====================
+function initSettingsRows() {
+    // Each setting-row that has a clickable value
+    document.querySelectorAll('.setting-row').forEach(row => {
+        const valEl = row.querySelector('.setting-val');
+        if (!valEl) return;
+        const label = row.querySelector('span:first-child')?.textContent?.trim();
+        const val = valEl.textContent.trim();
+
+        if (val === 'Change') {
+            valEl.style.cursor = 'pointer';
+            valEl.style.color = 'var(--ocean)';
+            valEl.addEventListener('click', () => {
+                showActionSheet('Change Password', `
+                    <div class="as-setting-form">
+                        <label class="as-label">Current Password</label>
+                        <input class="as-input" type="password" placeholder="••••••••" />
+                        <label class="as-label">New Password</label>
+                        <input class="as-input" type="password" id="as-new-pw" placeholder="Min 8 characters" />
+                        <label class="as-label">Confirm New Password</label>
+                        <input class="as-input" type="password" id="as-confirm-pw" placeholder="Repeat new password" />
+                        <button class="as-send-btn" id="as-pw-save">Update Password</button>
+                    </div>
+                `);
+                document.getElementById('as-pw-save').addEventListener('click', () => {
+                    const np = document.getElementById('as-new-pw').value;
+                    const cp = document.getElementById('as-confirm-pw').value;
+                    if (np.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+                    if (np !== cp) { showToast("Passwords don't match", 'error'); return; }
+                    closeActionSheet();
+                    showToast('Password updated successfully');
+                });
+            });
+        }
+
+        if (val === 'Connect' && label === 'Zapier') {
+            valEl.style.cursor = 'pointer';
+            valEl.style.color = 'var(--ocean)';
+            valEl.addEventListener('click', () => {
+                showActionSheet('Connect Zapier', `
+                    <div class="as-setting-form">
+                        <p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:12px;line-height:1.5">Paste your Zapier webhook URL to connect NaviFlow to your Zaps. You can create one at zapier.com.</p>
+                        <label class="as-label">Zapier Webhook URL</label>
+                        <input class="as-input" id="as-zapier-url" placeholder="https://hooks.zapier.com/hooks/catch/..." />
+                        <button class="as-send-btn" id="as-zapier-connect">Connect</button>
+                    </div>
+                `);
+                document.getElementById('as-zapier-connect').addEventListener('click', () => {
+                    const url = document.getElementById('as-zapier-url').value.trim();
+                    if (!url) { showToast('Please enter a webhook URL', 'error'); return; }
+                    valEl.textContent = 'Connected';
+                    valEl.classList.add('connected');
+                    valEl.style.cursor = 'default';
+                    closeActionSheet();
+                    showToast('Zapier connected successfully');
+                });
+            });
+        }
+
+        if (val === 'Configure' && label === 'Webhook') {
+            valEl.style.cursor = 'pointer';
+            valEl.style.color = 'var(--ocean)';
+            valEl.addEventListener('click', () => {
+                showActionSheet('Configure Webhook', `
+                    <div class="as-setting-form">
+                        <p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:12px;line-height:1.5">NaviFlow will POST lead events to this URL in real-time.</p>
+                        <label class="as-label">Endpoint URL</label>
+                        <input class="as-input" id="as-webhook-url" placeholder="https://your-server.com/webhook" />
+                        <label class="as-label">Secret Token (optional)</label>
+                        <input class="as-input" id="as-webhook-secret" placeholder="Used to verify the payload signature" />
+                        <button class="as-send-btn" id="as-webhook-save">Save Webhook</button>
+                    </div>
+                `);
+                document.getElementById('as-webhook-save').addEventListener('click', () => {
+                    const url = document.getElementById('as-webhook-url').value.trim();
+                    if (!url) { showToast('Please enter an endpoint URL', 'error'); return; }
+                    valEl.textContent = 'Configured';
+                    valEl.style.color = '#10b981';
+                    valEl.style.cursor = 'default';
+                    closeActionSheet();
+                    showToast('Webhook configured');
+                });
+            });
+        }
+    });
+
+    // Upgrade Plan button
+    document.querySelector('.settings-group-content[data-group="subscription"] .btn-primary')?.addEventListener('click', () => {
+        showActionSheet('Upgrade Your Plan', `
+            <div style="text-align:center;padding:8px 0 16px">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--dark);margin-bottom:4px">$99<span style="font-size:1rem;font-weight:500;color:var(--gray-500)">/month</span></div>
+                <div style="font-size:0.75rem;color:var(--teal);font-weight:600;margin-bottom:20px">Business Plan</div>
+                <ul style="text-align:left;list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+                    ${['Unlimited everything', '25,000 Emails/month', '5,000 SMS/month', 'Advanced AI Insights', 'Priority Support', 'Custom Integrations'].map(f =>
+                        `<li style="font-size:0.82rem;color:var(--dark);display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#45B29D" stroke-width="2.5" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>${f}</li>`
+                    ).join('')}
+                </ul>
+                <button class="as-send-btn" id="as-upgrade-btn" style="margin-top:0">Upgrade to Business</button>
+            </div>
+        `);
+        document.getElementById('as-upgrade-btn').addEventListener('click', () => {
+            closeActionSheet();
+            showToast('Upgrade request sent — our team will contact you!', 'info');
+        });
+    });
+
+    // Profile rows (name, email, phone)
+    document.querySelectorAll('.settings-group-content[data-group="profile"] .setting-row').forEach(row => {
+        const label = row.querySelector('span:first-child')?.textContent?.trim();
+        const valEl = row.querySelector('.setting-val');
+        if (!valEl || valEl.classList.contains('connected')) return;
+        if (label === 'Password') return; // handled above
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+            showActionSheet(`Edit ${label}`, `
+                <div class="as-setting-form">
+                    <label class="as-label">${label}</label>
+                    <input class="as-input" id="as-profile-val" value="${valEl.textContent}" />
+                    <button class="as-send-btn" id="as-profile-save">Save</button>
+                </div>
+            `);
+            document.getElementById('as-profile-save').addEventListener('click', () => {
+                const v = document.getElementById('as-profile-val').value.trim();
+                if (!v) return;
+                valEl.textContent = v;
+                closeActionSheet();
+                showToast(`${label} updated`);
+            });
+        });
+    });
+}
+
+// ==================== QUICK ACTIONS ====================
+function initQuickActions() {
+    const qaMap = {
+        'New Automation': () => navigateTo('screen-automations'),
+        'Broadcast': () => navigateTo('screen-campaigns'),
+        'Add Contact': () => {
+            showActionSheet('Add New Lead', `
+                <div class="as-setting-form">
+                    <label class="as-label">Full Name</label>
+                    <input class="as-input" id="as-lead-name" placeholder="e.g. Jane Smith" />
+                    <label class="as-label">Email</label>
+                    <input class="as-input" id="as-lead-email" placeholder="jane@company.com" />
+                    <label class="as-label">Phone</label>
+                    <input class="as-input" id="as-lead-phone" placeholder="+1 (555) 000-0000" />
+                    <button class="as-send-btn" id="as-lead-add">Add Lead</button>
+                </div>
+            `);
+            document.getElementById('as-lead-add').addEventListener('click', () => {
+                const name = document.getElementById('as-lead-name').value.trim();
+                const email = document.getElementById('as-lead-email').value.trim();
+                if (!name || !email) { showToast('Name and email are required', 'error'); return; }
+                const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                const colors = ['#2F6FA3', '#45B29D', '#1E3A5F', '#9ED8C3'];
+                const newLead = {
+                    id: leadsData.length + 1, name, initials, email,
+                    phone: document.getElementById('as-lead-phone').value.trim() || 'N/A',
+                    role: 'New Contact', status: 'new', tags: ['New'],
+                    color: colors[leadsData.length % colors.length], conversation: []
+                };
+                leadsData.unshift(newLead);
+                closeActionSheet();
+                showToast(`${name} added to leads`);
+                navigateTo('screen-leads');
+            });
+        }
+    };
+
+    document.querySelectorAll('.qa-btn').forEach(btn => {
+        const label = btn.querySelector('span')?.textContent?.trim();
+        if (qaMap[label]) {
+            btn.addEventListener('click', qaMap[label]);
+        }
+    });
+}
+
+// ==================== WIRE ALL BUTTON FEATURES ====================
+document.addEventListener('DOMContentLoaded', () => {
+    // Action sheet dismiss
+    document.getElementById('action-sheet-close').addEventListener('click', closeActionSheet);
+    document.getElementById('action-sheet-overlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeActionSheet();
+    });
+    // Button features
+    initLeadActions();
+    initAddNode();
+    initCampaignAddButton();
+    initSettingsRows();
+    initQuickActions();
+});
