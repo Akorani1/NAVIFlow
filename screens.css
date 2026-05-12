@@ -2182,7 +2182,7 @@
 
 /* ========== AI CHATBOT ========== */
 .ai-chat-fab {
-    position: absolute;
+    position: fixed;
     bottom: 90px;
     right: 16px;
     width: 52px;
@@ -2190,13 +2190,19 @@
     border-radius: 50%;
     background: linear-gradient(135deg, #f59e0b, #fbbf24);
     color: var(--white);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
     z-index: 110;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
     animation: fabBounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+}
+
+@media (max-width: 768px) {
+    .ai-chat-fab {
+        display: flex;
+    }
 }
 
 .ai-chat-fab svg {
