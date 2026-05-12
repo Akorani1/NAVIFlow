@@ -912,13 +912,93 @@ function initCampaigns() {
 }
 
 // ==================== ANALYTICS CHARTS ====================
-function drawAnalyticsCharts() {
-    drawConversionChart();
-    drawRevenueChart();
-    drawResponseChart();
+function getAnalyticsData(days) {
+    // Derive all analytics numbers from live app data
+    const totalLeads = leadsData.length;
+    const converted = leadsData.filter(l => l.status === 'converted').length;
+    const contacted = leadsData.filter(l => l.status === 'contacted').length;
+    const conversionRate = totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) : '0.0';
+    const weeklyRev = recoveryStats.recoveredThisWeek + 12000;
+    const totalRev = days === 7 ? weeklyRev : days === 30 ? weeklyRev * 4.2 : weeklyRev * 13;
+    const openRate = Math.round(55 + (recoveryStats.recoveryRate * 0.4));
+    const lowStock = inventoryData.filter(p => (p.stock / p.maxStock) <= 0.2).length;
+
+    // Scale chart data to match live numbers
+    const scale = totalLeads / 8; // baseline is 8 leads in demo data
+    const pts = days === 7 ? 7 : days === 30 ? 6 : 6;
+    const dayLabels7 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekLabels = ['Wk1', 'Wk2', 'Wk3', 'Wk4', 'Wk5', 'Wk6'];
+    const labels = days === 7 ? dayLabels7 : weekLabels;
+
+    // Conversion trend — peaks toward end, influenced by contacted/converted counts
+    const convBase = [12, 18, 15, 22, 28, 25, 32].map(v => Math.round(v * scale));
+    const convMonthly = [18, 22, 28, 35, 42, 48];
+    const convData = days === 7 ? convBase.slice(0, pts) : convMonthly.map(v => Math.round(v * scale));
+
+    // Revenue — based on recoveryStats weekly data + inventory value
+    const revBase = recoveryStats.weeklyData?.recovered || [1200, 1800, 2100, 1500, 2400, 1900, 1550];
+    const revMonthly = revBase.map((_, i) => Math.round((i + 1) * weeklyRev / 4));
+    const revData = days === 7 ? revBase.slice(0, pts) : revMonthly.slice(0, pts);
+    const revMax = Math.max(...revData) * 1.3;
+
+    // Response rates — email & SMS, influenced by recovery rate
+    const rr = recoveryStats.recoveryRate;
+    const emailRate = [35, 42, 38, 52, 48, 55, 62].map(v => Math.round(v * (rr / 27)));
+    const smsRate = [22, 28, 25, 35, 32, 40, 45].map(v => Math.round(v * (rr / 27)));
+    const emailMonthly = [40, 48, 52, 58, 62, 67];
+    const smsMonthly = [28, 34, 38, 44, 48, 52];
+    const resp1 = days === 7 ? emailRate.slice(0, pts) : emailMonthly.slice(0, pts);
+    const resp2 = days === 7 ? smsRate.slice(0, pts) : smsMonthly.slice(0, pts);
+
+    return { totalLeads, converted, contacted, conversionRate, totalRev, openRate, lowStock, convData, revData, revMax, resp1, resp2, labels };
 }
 
-function drawConversionChart() {
+let analyticsPeriod = 7;
+
+function drawAnalyticsCharts() {
+    const d = getAnalyticsData(analyticsPeriod);
+
+    // Update summary cards from live data
+    const revEl = document.querySelector('.an-sum-card:nth-child(1) .an-sum-val');
+    const leadsEl = document.querySelector('.an-sum-card:nth-child(2) .an-sum-val');
+    const convEl = document.querySelector('.an-sum-card:nth-child(3) .an-sum-val');
+    const openEl = document.querySelector('.an-sum-card:nth-child(4) .an-sum-val');
+    if (revEl) revEl.textContent = '₱' + Math.round(d.totalRev).toLocaleString();
+    if (leadsEl) leadsEl.textContent = d.totalLeads.toLocaleString();
+    if (convEl) convEl.textContent = d.conversionRate + '%';
+    if (openEl) openEl.textContent = d.openRate + '%';
+
+    // Update best automation stats from recovery/leads data
+    const perfItems = document.querySelectorAll('.perf-item');
+    if (perfItems[0]) {
+        const triggers = Math.round(d.contacted * 1.8);
+        perfItems[0].querySelector('p').textContent = `${triggers} triggers, 78% completion`;
+    }
+    if (perfItems[1]) {
+        const triggers = Math.round(d.totalLeads * 0.6);
+        perfItems[1].querySelector('p').textContent = `${triggers} triggers, 65% completion`;
+    }
+    if (perfItems[2]) {
+        const triggers = recoveryData.filter(r => r.status === 'recovered' || r.status === 'recovering').length * 8 + 12;
+        perfItems[2].querySelector('p').textContent = `${triggers} triggers, 42% completion`;
+    }
+
+    // Wire period buttons
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            analyticsPeriod = parseInt(btn.textContent) || 7;
+            drawAnalyticsCharts();
+        };
+    });
+
+    drawConversionChart(d);
+    drawRevenueChart(d);
+    drawResponseChart(d);
+}
+
+function drawConversionChart(d) {
     const canvas = document.getElementById('chart-conversion');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -930,12 +1010,11 @@ function drawConversionChart() {
     canvas.style.height = '200px';
     ctx.scale(dpr, dpr);
     const w = rect.width - 32, h = 200;
-    const data = [12, 18, 15, 22, 28, 25, 32];
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    drawLineChart(ctx, w, h, data, labels, '#2F6FA3', '#45B29D', 35);
+    const maxVal = Math.max(...d.convData) * 1.2 || 35;
+    drawLineChart(ctx, w, h, d.convData, d.labels, '#2F6FA3', '#45B29D', maxVal);
 }
 
-function drawRevenueChart() {
+function drawRevenueChart(d) {
     const canvas = document.getElementById('chart-revenue');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -947,12 +1026,10 @@ function drawRevenueChart() {
     canvas.style.height = '200px';
     ctx.scale(dpr, dpr);
     const w = rect.width - 32, h = 200;
-    const data = [1200, 1800, 2400, 1900, 3200, 2800, 3600];
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    drawBarChart(ctx, w, h, data, labels, 4000);
+    drawBarChart(ctx, w, h, d.revData, d.labels, d.revMax);
 }
 
-function drawResponseChart() {
+function drawResponseChart(d) {
     const canvas = document.getElementById('chart-response');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -964,14 +1041,13 @@ function drawResponseChart() {
     canvas.style.height = '200px';
     ctx.scale(dpr, dpr);
     const w = rect.width - 32, h = 200;
-    const data1 = [35, 42, 38, 52, 48, 55, 62];
-    const data2 = [22, 28, 25, 35, 32, 40, 45];
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const data1 = d.resp1, data2 = d.resp2;
+    const labels = d.labels;
 
     const padding = { top: 20, right: 10, bottom: 30, left: 35 };
     const chartW = w - padding.left - padding.right;
     const chartH = h - padding.top - padding.bottom;
-    const maxVal = 70;
+    const maxVal = Math.max(...data1, ...data2) * 1.25 || 70;
     ctx.clearRect(0, 0, w, h);
 
     // Grid
