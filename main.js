@@ -561,6 +561,17 @@ function initLeads() {
                 <input class="as-input" id="as-lead-phone2" placeholder="+1 (555) 000-0000" />
                 <label class="as-label">Role / Company</label>
                 <input class="as-input" id="as-lead-role2" placeholder="e.g. CEO at Acme Inc." />
+                <label class="as-label">Category</label>
+                <div class="as-tag-grid" id="as-lead-cat-chips">
+                    <button class="as-tag-chip selected" data-cat="Prospect">Prospect</button>
+                    <button class="as-tag-chip" data-cat="Client">Client</button>
+                    <button class="as-tag-chip" data-cat="Partner">Partner</button>
+                    <button class="as-tag-chip" data-cat="VIP">VIP</button>
+                    <button class="as-tag-chip" data-cat="Enterprise">Enterprise</button>
+                    <button class="as-tag-chip" data-cat="Cold Lead">Cold Lead</button>
+                    <button class="as-tag-chip" data-cat="Referral">Referral</button>
+                    <button class="as-tag-chip" data-cat="Inbound">Inbound</button>
+                </div>
                 <label class="as-label">Status</label>
                 <div class="as-tag-grid" id="as-lead-status-chips">
                     <button class="as-tag-chip selected" data-status="new">New</button>
@@ -570,6 +581,12 @@ function initLeads() {
                 <button class="as-send-btn" id="as-lead-add2">Add Lead</button>
             </div>
         `);
+        document.querySelectorAll('#as-lead-cat-chips .as-tag-chip').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('#as-lead-cat-chips .as-tag-chip').forEach(x => x.classList.remove('selected'));
+                c.classList.add('selected');
+            });
+        });
         document.querySelectorAll('#as-lead-status-chips .as-tag-chip').forEach(c => {
             c.addEventListener('click', () => {
                 document.querySelectorAll('#as-lead-status-chips .as-tag-chip').forEach(x => x.classList.remove('selected'));
@@ -583,11 +600,12 @@ function initLeads() {
             const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
             const colors = ['#2F6FA3', '#45B29D', '#1E3A5F', '#9ED8C3'];
             const status = document.querySelector('#as-lead-status-chips .as-tag-chip.selected')?.dataset.status || 'new';
+            const category = document.querySelector('#as-lead-cat-chips .as-tag-chip.selected')?.dataset.cat || 'Prospect';
             const newLead = {
                 id: leadsData.length + 1, name, initials, email,
                 phone: document.getElementById('as-lead-phone2').value.trim() || 'N/A',
                 role: document.getElementById('as-lead-role2').value.trim() || 'New Contact',
-                status, tags: ['New'], color: colors[leadsData.length % colors.length], conversation: []
+                status, tags: [category], color: colors[leadsData.length % colors.length], conversation: []
             };
             leadsData.unshift(newLead);
             renderLeads(leadsData);
@@ -624,16 +642,19 @@ function initLeads() {
 
 function renderLeads(leads) {
     const list = document.getElementById('leads-list');
-    list.innerHTML = leads.map(lead => `
+    list.innerHTML = leads.map(lead => {
+        const catTag = lead.tags?.[0] || '';
+        return `
     <div class="lead-card" data-id="${lead.id}" style="animation: slideIn 0.3s ease-out both; animation-delay: ${leads.indexOf(lead) * 0.05}s">
       <div class="lead-avatar" style="background: ${lead.color}">${lead.initials}</div>
       <div class="lead-info">
         <h4>${lead.name}</h4>
         <p>${lead.email}</p>
+        ${catTag ? `<span class="lead-cat-tag">${catTag}</span>` : ''}
       </div>
       <span class="lead-status status-${lead.status}">${lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}</span>
     </div>
-  `).join('');
+  `;}).join('');
 
     // Click to view detail
     list.querySelectorAll('.lead-card').forEach(card => {
@@ -737,14 +758,64 @@ function simulateReply(lead) {
 }
 
 // ==================== AUTOMATIONS ====================
-function initAutomations() {
-    // Toggle switches
-    document.querySelectorAll('.auto-toggle').forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggle.classList.toggle('active');
+function initAutoCardAccordion() {
+    // Wire accordion for all current and future auto-cards in the list
+    document.querySelectorAll('.auto-card').forEach(card => {
+        const header = card.querySelector('.auto-card-header');
+        if (!header || header.dataset.accordionBound) return;
+        header.dataset.accordionBound = '1';
+
+        // Toggle switch — stop propagation so it doesn't open accordion
+        const toggle = card.querySelector('.auto-toggle');
+        toggle?.addEventListener('click', e => { e.stopPropagation(); toggle.classList.toggle('active'); });
+
+        // Chip single-select inside expanded area
+        card.querySelectorAll('.auto-chips').forEach(group => {
+            group.querySelectorAll('.auto-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    group.querySelectorAll('.auto-chip').forEach(c => c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    // Update the trigger label in the header
+                    const fieldLabel = chip.closest('.auto-field')?.querySelector('label')?.textContent;
+                    if (fieldLabel === 'Trigger') {
+                        const infoP = card.querySelector('.auto-info p');
+                        if (infoP) infoP.textContent = 'Trigger: ' + chip.textContent;
+                    }
+                });
+            });
+        });
+
+        // Delay stepper
+        const delayVal = card.querySelector('.auto-delay-val');
+        card.querySelector('.auto-delay-minus')?.addEventListener('click', () => {
+            const v = parseInt(delayVal.value) || 0;
+            if (v > 0) delayVal.value = v - 1;
+        });
+        card.querySelector('.auto-delay-plus')?.addEventListener('click', () => {
+            const v = parseInt(delayVal.value) || 0;
+            if (v < 30) delayVal.value = v + 1;
+        });
+
+        // Save button
+        card.querySelector('.auto-save-btn')?.addEventListener('click', () => {
+            const trigger = card.querySelector('.auto-chips .auto-chip.selected')?.textContent || '';
+            const action = card.querySelectorAll('.auto-chips')[1]?.querySelector('.auto-chip.selected')?.textContent || '';
+            const delay = delayVal?.value || '0';
+            card.classList.remove('expanded');
+            showToast(`Saved: ${action} after ${delay}d on "${trigger}"`, 'success');
+        });
+
+        // Header click — accordion (close others, toggle this)
+        header.addEventListener('click', () => {
+            const isOpen = card.classList.contains('expanded');
+            document.querySelectorAll('.auto-card.expanded').forEach(c => c.classList.remove('expanded'));
+            if (!isOpen) card.classList.add('expanded');
         });
     });
+}
+
+function initAutomations() {
+    initAutoCardAccordion();
 
     // Node pulse animation + make nodes interactive
     document.querySelectorAll('.auto-node').forEach((node, i) => {
@@ -802,15 +873,51 @@ function initAutomations() {
                 card.style.animation = 'slideIn 0.3s ease-out both';
                 card.innerHTML = `
                     <div class="auto-card-header">
-                        <div class="auto-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div class="auto-info">
+                            <h4>${name}</h4>
+                            <p>Trigger: ${trigger}</p>
+                        </div>
                         <div class="auto-toggle active"><div class="toggle-dot"></div></div>
+                        <svg class="auto-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
-                    <h4 class="auto-card-name">${name}</h4>
-                    <p class="auto-card-trigger">Trigger: ${trigger}</p>
-                    <div class="auto-card-stats"><span>0 runs</span><span class="auto-card-status active-status">Active</span></div>
+                    <div class="auto-card-body">
+                        <div class="auto-field">
+                            <label>Trigger</label>
+                            <div class="auto-chips">
+                                <button class="auto-chip${trigger === 'New Lead Added' ? ' selected' : ''}">New Lead Added</button>
+                                <button class="auto-chip${trigger === 'No Reply 24h' ? ' selected' : ''}">No Reply 24h</button>
+                                <button class="auto-chip${trigger === 'Purchase Made' ? ' selected' : ''}">Purchase Made</button>
+                                <button class="auto-chip${trigger === 'Tag Added' ? ' selected' : ''}">Tag Added</button>
+                            </div>
+                        </div>
+                        <div class="auto-field">
+                            <label>Action</label>
+                            <div class="auto-chips">
+                                <button class="auto-chip selected">Send Email</button>
+                                <button class="auto-chip">Send SMS</button>
+                                <button class="auto-chip">Add Tag</button>
+                                <button class="auto-chip">Notify Team</button>
+                            </div>
+                        </div>
+                        <div class="auto-field">
+                            <label>Message</label>
+                            <textarea class="auto-textarea" placeholder="Enter your message..."></textarea>
+                        </div>
+                        <div class="auto-field">
+                            <label>Delay before trigger</label>
+                            <div class="sends-row">
+                                <button class="sends-btn auto-delay-minus">−</button>
+                                <input type="number" class="sends-count auto-delay-val" value="0" min="0" max="30" />
+                                <button class="sends-btn auto-delay-plus">+</button>
+                                <span class="sends-hint">day(s)</span>
+                            </div>
+                        </div>
+                        <button class="auto-save-btn">Save Changes</button>
+                    </div>
                 `;
                 list.insertBefore(card, list.firstChild);
-                card.querySelector('.auto-toggle').addEventListener('click', e => { e.stopPropagation(); card.querySelector('.auto-toggle').classList.toggle('active'); });
+                initAutoCardAccordion();
             }
         });
     });
@@ -1369,6 +1476,20 @@ function renderSpeedGuardCards() {
             e.stopPropagation();
             const id = parseInt(btn.dataset.sgReply);
             handleManualReply(id);
+        });
+    });
+
+    // Clicking anywhere on the card opens the lead's conversation
+    container.querySelectorAll('.sg-card').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+            const sgId = parseInt(card.dataset.sgId);
+            const sgLead = speedGuardLeads.find(l => l.id === sgId);
+            if (!sgLead) return;
+            // Find matching lead in leadsData by name
+            const lead = leadsData.find(l => l.name === sgLead.name)
+                || leadsData[0];
+            showLeadDetail(lead);
         });
     });
 }

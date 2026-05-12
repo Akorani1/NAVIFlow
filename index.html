@@ -601,48 +601,145 @@
 
         <!-- Active Automations List -->
         <div class="auto-list">
+
           <div class="auto-card" data-auto="welcome">
             <div class="auto-card-header">
-              <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg></div>
+              <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
               <div class="auto-info">
                 <h4>Welcome Sequence</h4>
-                <p>Triggered 142 times</p>
+                <p>Trigger: New Lead Added</p>
               </div>
-              <div class="auto-toggle active">
-                <div class="toggle-dot"></div>
+              <div class="auto-toggle active"><div class="toggle-dot"></div></div>
+              <svg class="auto-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="auto-card-body">
+              <div class="auto-field">
+                <label>Trigger</label>
+                <div class="auto-chips">
+                  <button class="auto-chip selected">New Lead Added</button>
+                  <button class="auto-chip">No Reply 24h</button>
+                  <button class="auto-chip">Purchase Made</button>
+                  <button class="auto-chip">Tag Added</button>
+                </div>
               </div>
+              <div class="auto-field">
+                <label>Action</label>
+                <div class="auto-chips">
+                  <button class="auto-chip selected">Send Email</button>
+                  <button class="auto-chip">Send SMS</button>
+                  <button class="auto-chip">Add Tag</button>
+                  <button class="auto-chip">Notify Team</button>
+                </div>
+              </div>
+              <div class="auto-field">
+                <label>Message</label>
+                <textarea class="auto-textarea" placeholder="Enter your message...">Hi {name}, welcome to our community! We're excited to have you. Let us know how we can help.</textarea>
+              </div>
+              <div class="auto-field">
+                <label>Delay before trigger</label>
+                <div class="sends-row">
+                  <button class="sends-btn auto-delay-minus">−</button>
+                  <input type="number" class="sends-count auto-delay-val" value="0" min="0" max="30" />
+                  <button class="sends-btn auto-delay-plus">+</button>
+                  <span class="sends-hint">day(s)</span>
+                </div>
+              </div>
+              <button class="auto-save-btn">Save Changes</button>
             </div>
           </div>
+
           <div class="auto-card" data-auto="followup">
             <div class="auto-card-header">
-              <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg></div>
+              <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
               <div class="auto-info">
                 <h4>Lead Follow-Up</h4>
-                <p>Triggered 89 times</p>
+                <p>Trigger: No Reply 24h</p>
               </div>
-              <div class="auto-toggle active">
-                <div class="toggle-dot"></div>
+              <div class="auto-toggle active"><div class="toggle-dot"></div></div>
+              <svg class="auto-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="auto-card-body">
+              <div class="auto-field">
+                <label>Trigger</label>
+                <div class="auto-chips">
+                  <button class="auto-chip">New Lead Added</button>
+                  <button class="auto-chip selected">No Reply 24h</button>
+                  <button class="auto-chip">Purchase Made</button>
+                  <button class="auto-chip">Tag Added</button>
+                </div>
               </div>
+              <div class="auto-field">
+                <label>Action</label>
+                <div class="auto-chips">
+                  <button class="auto-chip">Send Email</button>
+                  <button class="auto-chip selected">Send SMS</button>
+                  <button class="auto-chip">Add Tag</button>
+                  <button class="auto-chip">Notify Team</button>
+                </div>
+              </div>
+              <div class="auto-field">
+                <label>Message</label>
+                <textarea class="auto-textarea" placeholder="Enter your message...">Hi {name}, just checking in! We noticed you haven't replied yet. Still interested? Reply YES and we'll get back to you right away.</textarea>
+              </div>
+              <div class="auto-field">
+                <label>Delay before trigger</label>
+                <div class="sends-row">
+                  <button class="sends-btn auto-delay-minus">−</button>
+                  <input type="number" class="sends-count auto-delay-val" value="1" min="0" max="30" />
+                  <button class="sends-btn auto-delay-plus">+</button>
+                  <span class="sends-hint">day(s)</span>
+                </div>
+              </div>
+              <button class="auto-save-btn">Save Changes</button>
             </div>
           </div>
+
           <div class="auto-card" data-auto="abandoned">
-            <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-              </svg></div>
-            <div class="auto-info">
-              <h4>Cart Abandonment</h4>
-              <p>Triggered 56 times</p>
+            <div class="auto-card-header">
+              <div class="auto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
+              <div class="auto-info">
+                <h4>Cart Abandonment</h4>
+                <p>Trigger: Form Submitted</p>
+              </div>
+              <div class="auto-toggle"><div class="toggle-dot"></div></div>
+              <svg class="auto-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
-            <div class="auto-toggle">
-              <div class="toggle-dot"></div>
+            <div class="auto-card-body">
+              <div class="auto-field">
+                <label>Trigger</label>
+                <div class="auto-chips">
+                  <button class="auto-chip">New Lead Added</button>
+                  <button class="auto-chip">No Reply 24h</button>
+                  <button class="auto-chip">Purchase Made</button>
+                  <button class="auto-chip selected">Form Submitted</button>
+                </div>
+              </div>
+              <div class="auto-field">
+                <label>Action</label>
+                <div class="auto-chips">
+                  <button class="auto-chip selected">Send Email</button>
+                  <button class="auto-chip">Send SMS</button>
+                  <button class="auto-chip">Add Tag</button>
+                  <button class="auto-chip">Notify Team</button>
+                </div>
+              </div>
+              <div class="auto-field">
+                <label>Message</label>
+                <textarea class="auto-textarea" placeholder="Enter your message...">Hey {name}, you left something behind! Complete your order today and get free shipping on us.</textarea>
+              </div>
+              <div class="auto-field">
+                <label>Delay before trigger</label>
+                <div class="sends-row">
+                  <button class="sends-btn auto-delay-minus">−</button>
+                  <input type="number" class="sends-count auto-delay-val" value="0" min="0" max="30" />
+                  <button class="sends-btn auto-delay-plus">+</button>
+                  <span class="sends-hint">day(s)</span>
+                </div>
+              </div>
+              <button class="auto-save-btn">Save Changes</button>
             </div>
           </div>
+
         </div>
 
         <!-- Visual Automation Builder -->
