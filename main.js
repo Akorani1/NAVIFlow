@@ -265,7 +265,7 @@ function animateCounters() {
 
             let displayValue;
             if (isCurrency) {
-                displayValue = '$' + Math.floor(current).toLocaleString();
+                displayValue = '₱' + Math.floor(current).toLocaleString();
             } else if (isPercent) {
                 displayValue = current.toFixed(1) + '%';
             } else {
@@ -319,7 +319,7 @@ function drawDashboardRevenueChart() {
         ctx.fillStyle = '#9ca3af';
         ctx.font = '10px Inter';
         ctx.textAlign = 'right';
-        ctx.fillText('$' + Math.round((maxVal - (maxVal / 4) * i) / 1000) + 'k', padding.left - 6, y + 4);
+        ctx.fillText('₱' + Math.round((maxVal - (maxVal / 4) * i) / 1000) + 'k', padding.left - 6, y + 4);
     }
 
     // Labels
@@ -746,9 +746,11 @@ function initAutomations() {
         });
     });
 
-    // Node pulse animation
+    // Node pulse animation + make nodes interactive
     document.querySelectorAll('.auto-node').forEach((node, i) => {
         node.style.animation = `slideIn 0.4s ease-out ${i * 0.1}s both`;
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', () => openNodeEditor(node));
     });
 
     // + button — open new automation sheet
@@ -1034,7 +1036,7 @@ function drawBarChart(ctx, w, h, data, labels, maxVal) {
         const y = padding.top + (chartH / 4) * i;
         ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(w - padding.right, y); ctx.stroke();
         ctx.fillStyle = '#9ca3af'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
-        ctx.fillText('$' + Math.round((maxVal - (maxVal / 4) * i) / 1000) + 'k', padding.left - 6, y + 4);
+        ctx.fillText('₱' + Math.round((maxVal - (maxVal / 4) * i) / 1000) + 'k', padding.left - 6, y + 4);
     }
 
     data.forEach((val, i) => {
@@ -1433,7 +1435,7 @@ function renderRecoveryOpportunities(data = recoveryData) {
                 <div class="lost-opp-avatar" style="background: linear-gradient(135deg, ${opp.color}40, ${opp.color}15)">${opp.initials}</div>
                 <div class="lost-opp-info">
                     <h4>${opp.name}</h4>
-                    <span class="lost-opp-value">Potential: $${opp.value.toLocaleString()}</span>
+                    <span class="lost-opp-value">Potential: ₱${opp.value.toLocaleString()}</span>
                 </div>
                 <span class="lost-opp-status ${statusClass}">${statusLabel}</span>
             </div>
@@ -1508,7 +1510,7 @@ function renderRecoveryOpportunities(data = recoveryData) {
                         if (statusEl) { statusEl.className = 'lost-opp-status rec-status-recovered'; statusEl.textContent = 'Recovered'; }
                         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovered';
                         btn.classList.add('btn-recovered');
-                        showToast(`${opp.name} recovered — $${opp.value.toLocaleString()} won back!`, 'success');
+                        showToast(`${opp.name} recovered — ₱${opp.value.toLocaleString()} won back!`, 'success');
                         animateRecoveryCounters();
                     }, 4000);
                 }, 1200);
@@ -1568,7 +1570,7 @@ function drawRecoveryChart() {
         const y = padding.top + (chartH / 4) * i;
         ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(w - padding.right, y); ctx.stroke();
         ctx.fillStyle = '#9ca3af'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
-        ctx.fillText('$' + ((maxVal - (maxVal / 4) * i) / 1000).toFixed(1) + 'k', padding.left - 6, y + 4);
+        ctx.fillText('₱' + ((maxVal - (maxVal / 4) * i) / 1000).toFixed(1) + 'k', padding.left - 6, y + 4);
     }
     labels.forEach((l, i) => {
         ctx.fillStyle = '#9ca3af'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
@@ -1788,7 +1790,7 @@ function initPOS() {
 
             renderProducts(inventoryData);
             drawStockChart();
-            showToast(`Sale complete — ${product.name} x${qty} · $${total}`);
+            showToast(`Sale complete — ${product.name} x${qty} · ₱${total}`);
 
             setTimeout(() => {
                 btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> Process Sale';
@@ -1920,7 +1922,7 @@ function animatePOSCounters() {
                 clearInterval(timer);
             }
             el.textContent = isCurrency
-                ? '$' + Math.floor(current).toLocaleString()
+                ? '₱' + Math.floor(current).toLocaleString()
                 : Math.floor(current).toLocaleString();
         }, 16);
     });
@@ -1942,7 +1944,7 @@ function updateSaleTotal() {
     const qty = parseInt(document.getElementById('pos-sale-qty').value) || 0;
     const product = inventoryData.find(p => p.id === parseInt(productId));
     const total = product ? (product.price * qty) : 0;
-    document.getElementById('pos-sale-total').textContent = '$' + total.toFixed(2);
+    document.getElementById('pos-sale-total').textContent = '₱' + total.toFixed(2);
 }
 
 function drawStockChart() {
@@ -2041,7 +2043,7 @@ function smartFallback(text, ctx) {
         return `You currently have ${ctx.totalLeads} leads in your pipeline — ${ctx.vipLeads} VIP and ${ctx.hotLeads} marked hot. Your top priority should be following up with any contacted leads who haven't responded in 48+ hours.`;
     }
     if (q.includes('revenue') || q.includes('sales') || q.includes('money')) {
-        return `Your weekly revenue is $${(ctx.weeklyRevenue || 24680).toLocaleString()}, up ${ctx.revenueGrowth || '12%'} from last week. To accelerate growth, consider launching a targeted campaign at your VIP leads — they typically convert at 3x the rate.`;
+        return `Your weekly revenue is ₱${(ctx.weeklyRevenue || 24680).toLocaleString()}, up ${ctx.revenueGrowth || '12%'} from last week. To accelerate growth, consider launching a targeted campaign at your VIP leads — they typically convert at 3x the rate.`;
     }
     if (q.includes('stock') || q.includes('inventory') || q.includes('low')) {
         const low = ctx.lowStockItems || [];
@@ -2049,7 +2051,7 @@ function smartFallback(text, ctx) {
         return `All inventory levels look healthy right now. Keep an eye on fast-moving items and set reorder alerts at 20% stock level.`;
     }
     if (q.includes('recover') || q.includes('lost') || q.includes('churn')) {
-        return `You have $${(ctx.recoveryAtRisk || 30000).toLocaleString()} at risk from dropped leads. Your current recovery rate is ${ctx.recoveryRate || 27}%. Sending a personalized discount to price-hesitant leads is your highest-ROI action right now.`;
+        return `You have ₱${(ctx.recoveryAtRisk || 30000).toLocaleString()} at risk from dropped leads. Your current recovery rate is ${ctx.recoveryRate || 27}%. Sending a personalized discount to price-hesitant leads is your highest-ROI action right now.`;
     }
     if (q.includes('campaign') || q.includes('email') || q.includes('sms')) {
         return `Your best-performing campaigns target VIP leads with personalized subject lines. SMS campaigns see 3x higher open rates than email for follow-ups. I'd recommend sending a "slot-save" SMS to your hottest leads today.`;
@@ -2061,7 +2063,7 @@ function smartFallback(text, ctx) {
     if (greetings.some(g => q.includes(g))) {
         return `Hi! I'm NaviAI. I can help you analyze your ${ctx.totalLeads} leads, track revenue trends, manage inventory, and recover lost opportunities. Try asking "How are my leads doing?" or "What should I focus on today?"`;
     }
-    return `Based on your current data: ${ctx.totalLeads} leads, $${(ctx.weeklyRevenue || 24680).toLocaleString()} weekly revenue, and ${(ctx.lowStockItems || []).length} low-stock items. Your biggest opportunity right now is the $${(ctx.recoveryAtRisk || 30000).toLocaleString()} in recoverable revenue. Want me to break down any of these areas?`;
+    return `Based on your current data: ${ctx.totalLeads} leads, ₱${(ctx.weeklyRevenue || 24680).toLocaleString()} weekly revenue, and ${(ctx.lowStockItems || []).length} low-stock items. Your biggest opportunity right now is the ₱${(ctx.recoveryAtRisk || 30000).toLocaleString()} in recoverable revenue. Want me to break down any of these areas?`;
 }
 
 // ==================== AI CHATBOT ====================
@@ -2352,6 +2354,77 @@ function initCampaignAddButton() {
             const nameInput = document.querySelector('.camp-input');
             if (nameInput) { nameInput.value = name; nameInput.focus(); }
         });
+    });
+}
+
+// ==================== NODE EDITOR ====================
+function openNodeEditor(node) {
+    const nameEl = node.querySelector('.node-name');
+    const typeEl = node.querySelector('.node-type');
+    const currentName = nameEl?.textContent || '';
+    const currentType = typeEl?.textContent || '';
+    const isTrigger = node.classList.contains('node-trigger');
+
+    const nodeTypeOptions = ['Send Email', 'Send SMS', 'Wait 1 Day', 'Wait 3 Days', 'Add Tag', 'Remove Tag', 'Check Condition', 'Notify Team'];
+    const triggerOptions = ['New Lead Added', 'No Reply 24h', 'Tag Added', 'Purchase Made', 'Form Submitted', 'Link Clicked'];
+    const options = isTrigger ? triggerOptions : nodeTypeOptions;
+
+    showActionSheet(`Edit ${isTrigger ? 'Trigger' : 'Action'} Node`, `
+        <div class="as-setting-form">
+            ${!isTrigger ? `
+            <label class="as-label">Node Type</label>
+            <div class="as-tag-grid" id="as-node-type-chips">
+                ${options.map(o => `<button class="as-tag-chip${o === currentName ? ' selected' : ''}" data-val="${o}">${o}</button>`).join('')}
+            </div>` : `
+            <label class="as-label">Trigger Event</label>
+            <div class="as-tag-grid" id="as-node-type-chips">
+                ${options.map(o => `<button class="as-tag-chip${o === currentName ? ' selected' : ''}" data-val="${o}">${o}</button>`).join('')}
+            </div>`}
+            ${!isTrigger ? `
+            <label class="as-label" style="margin-top:12px">Custom Label (optional)</label>
+            <input class="as-input" id="as-node-label" value="${currentName}" placeholder="e.g. Send Welcome Email" />` : ''}
+            <div style="display:flex;gap:8px;margin-top:4px">
+                <button class="as-send-btn" id="as-node-save" style="flex:1;margin-top:0">Save</button>
+                ${!isTrigger ? `<button class="as-send-btn" id="as-node-delete" style="flex:0 0 auto;margin-top:0;background:linear-gradient(135deg,#ef4444,#b91c1c);padding:14px 18px">Delete</button>` : ''}
+            </div>
+        </div>
+    `);
+
+    document.querySelectorAll('#as-node-type-chips .as-tag-chip').forEach(c => {
+        c.addEventListener('click', () => {
+            document.querySelectorAll('#as-node-type-chips .as-tag-chip').forEach(x => x.classList.remove('selected'));
+            c.classList.add('selected');
+            const labelInput = document.getElementById('as-node-label');
+            if (labelInput) labelInput.value = c.dataset.val;
+        });
+    });
+
+    document.getElementById('as-node-save')?.addEventListener('click', () => {
+        const selected = document.querySelector('#as-node-type-chips .as-tag-chip.selected')?.dataset.val || currentName;
+        const labelVal = document.getElementById('as-node-label')?.value.trim() || selected;
+        if (nameEl) nameEl.textContent = labelVal;
+        // Update node color class based on type
+        node.className = node.className.replace(/node-\w+/g, '').trim();
+        if (selected.includes('Email')) node.classList.add('auto-node', 'node-action');
+        else if (selected.includes('SMS')) node.classList.add('auto-node', 'node-action');
+        else if (selected.includes('Wait')) node.classList.add('auto-node', 'node-wait');
+        else if (selected.includes('Condition') || selected.includes('Check')) node.classList.add('auto-node', 'node-condition');
+        else node.classList.add('auto-node', 'node-action');
+        closeActionSheet();
+        showToast('Node updated');
+        node.style.animation = 'slideIn 0.3s ease-out both';
+    });
+
+    document.getElementById('as-node-delete')?.addEventListener('click', () => {
+        // Remove this node and its preceding connector
+        const prev = node.previousElementSibling;
+        if (prev?.classList.contains('node-connector')) prev.remove();
+        node.style.transition = 'all 0.3s ease';
+        node.style.opacity = '0';
+        node.style.transform = 'scale(0.8)';
+        setTimeout(() => node.remove(), 300);
+        closeActionSheet();
+        showToast('Node deleted');
     });
 }
 
