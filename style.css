@@ -190,12 +190,13 @@ ul { list-style: none; }
 .nav-item {
   display: flex; flex-direction: column; align-items: center;
   gap: 3px; padding: 8px 0;
-  min-width: 52px;
+  min-width: 0;
+  flex: 1;
   transition: var(--transition);
   position: relative;
 }
-.nav-item svg { width: 20px; height: 20px; color: var(--gray-400); transition: var(--transition); }
-.nav-item span { font-size: 0.59rem; font-weight: 500; color: var(--gray-400); transition: var(--transition); letter-spacing: 0.2px; }
+.nav-item svg { width: 19px; height: 19px; color: var(--gray-400); transition: var(--transition); }
+.nav-item span { font-size: 0.53rem; font-weight: 500; color: var(--gray-400); transition: var(--transition); letter-spacing: 0.1px; }
 .nav-item.active svg { color: var(--teal); }
 .nav-item.active span { color: var(--teal); font-weight: 700; }
 .nav-item.active::before {
