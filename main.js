@@ -254,9 +254,22 @@ function setUserProfile(name, email) {
 
 // ==================== SPLASH SCREEN ====================
 function initSplash() {
-    const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
-    Promise.all([minDelay, loadDataFromSupabase()]).then(() => {
-        navigateTo('screen-login', false);
+    // If returning from Google OAuth the hash contains access_token —
+    // wait for onAuthStateChange to fire instead of calling getSession() too early
+    const hasOAuthToken = window.location.hash.includes('access_token');
+
+    const minDelay = new Promise(resolve => setTimeout(resolve, hasOAuthToken ? 1000 : 3000));
+    Promise.all([minDelay, loadDataFromSupabase()]).then(async () => {
+        const session = await db.getSession();
+        if (session?.user) {
+            const email = session.user.email || '';
+            const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || null;
+            setUserProfile(name, email);
+            navigateTo('screen-dashboard');
+        } else if (!hasOAuthToken) {
+            navigateTo('screen-login', false);
+        }
+        // If hasOAuthToken but no session yet, onAuthStateChange will handle it
     });
 }
 
@@ -1540,13 +1553,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedEmail = localStorage.getItem('nf_user_email');
     if (savedName) setUserProfile(savedName, savedEmail);
 
-    // Handle Google OAuth redirect back to app
-    db.onAuthStateChange((session) => {
-        if (session?.user) {
+    // Handle Google OAuth redirect and session changes
+    // INITIAL_SESSION fires when onAuthStateChange is first called with any existing session
+    // SIGNED_IN fires for new sign-ins including OAuth redirects
+    db.onAuthStateChange((event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
             const email = session.user.email || '';
             const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || null;
             setUserProfile(name, email);
-            if (currentScreen === 'screen-login' || currentScreen === 'screen-splash') {
+            if (currentScreen !== 'screen-dashboard') {
                 navigateTo('screen-dashboard');
             }
         }

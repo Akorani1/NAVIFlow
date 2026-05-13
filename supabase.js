@@ -160,6 +160,6 @@ export const db = {
     },
     async onAuthStateChange(callback) {
         if (!supabase) return;
-        supabase.auth.onAuthStateChange((_event, session) => callback(session));
+        supabase.auth.onAuthStateChange((event, session) => callback(event, session));
     },
 };
