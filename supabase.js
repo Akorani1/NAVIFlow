@@ -142,6 +142,13 @@ export const db = {
         if (!supabase) return { error: { message: 'Supabase not configured' } };
         return await supabase.auth.signUp({ email, password });
     },
+    async signInWithGoogle() {
+        if (!supabase) return { error: { message: 'Supabase not configured' } };
+        return await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin },
+        });
+    },
     async signOut() {
         if (!supabase) return;
         await supabase.auth.signOut();
@@ -150,5 +157,9 @@ export const db = {
         if (!supabase) return null;
         const { data } = await supabase.auth.getSession();
         return data.session;
+    },
+    async onAuthStateChange(callback) {
+        if (!supabase) return;
+        supabase.auth.onAuthStateChange((_event, session) => callback(session));
     },
 };

@@ -1806,7 +1806,7 @@
 /* FAB */
 .pos-add-fab {
     position: absolute;
-    bottom: 144px;
+    bottom: 210px;
     right: 16px;
     width: 48px;
     height: 48px;
@@ -1834,7 +1834,7 @@
 
 .pos-fab {
     position: absolute;
-    bottom: 80px;
+    bottom: 150px;
     right: 16px;
     width: 52px;
     height: 52px;
