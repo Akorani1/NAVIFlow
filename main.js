@@ -130,6 +130,7 @@ function navigateTo(screenId, showNav = true) {
 
     const nav = document.getElementById('bottom-nav');
     const sidebar = document.getElementById('desktop-sidebar');
+    const fab = document.getElementById('ai-chat-fab');
     const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login';
     const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-recovery', 'screen-settings'];
 
@@ -138,6 +139,9 @@ function navigateTo(screenId, showNav = true) {
     } else if (!isAuthScreen) {
         nav.classList.add('hidden');
     }
+
+    // Show FAB only when logged in (not on splash/login)
+    if (fab) fab.style.display = isAuthScreen ? '' : 'none';
 
     if (sidebar) {
         if (isAuthScreen && showNav) {
@@ -165,6 +169,8 @@ function navigateTo(screenId, showNav = true) {
     if (screenId === 'screen-dashboard') {
         animateCounters();
         setTimeout(() => drawCharts(), 300);
+        // Start speed guard only after first login
+        if (!speedGuardInterval) initSpeedGuard();
     }
     if (screenId === 'screen-analytics') {
         setTimeout(() => drawAnalyticsCharts(), 300);
@@ -1375,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initBackButtons();
     initPeriodButtons();
     initAIChatbot();
-    initSpeedGuard();
+    // Speed guard starts after login (see navigateTo screen-dashboard)
 });
 
 // ==================== REPLY SPEED GUARD ====================

@@ -2316,6 +2316,9 @@
     }
 }
 
+/* Hidden until JS sets display:'' after login */
+.ai-chat-fab[style*="none"] { display: none !important; }
+
 .ai-chat-fab svg {
     width: 22px;
     height: 22px;
