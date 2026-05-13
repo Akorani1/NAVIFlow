@@ -358,12 +358,10 @@ function initSignup() {
         const name = document.getElementById('signup-name')?.value.trim();
         const email = document.getElementById('signup-email')?.value.trim();
         const password = document.getElementById('signup-password')?.value;
-        const confirm = document.getElementById('signup-confirm')?.value;
 
         if (!name) { showToast('Please enter your full name', 'error'); return; }
         if (!email) { showToast('Please enter your email', 'error'); return; }
         if (!password || password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
-        if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
 
         btnSignup.textContent = 'Creating account...';
         btnSignup.disabled = true;
