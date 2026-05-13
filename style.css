@@ -114,7 +114,7 @@ ul { list-style: none; }
 .splash-title { font-size: 2rem; font-weight: 800; color: var(--white); letter-spacing: 3px; }
 .splash-title span { color: var(--mint); }
 .splash-tagline { color: rgba(255,255,255,0.7); font-size: 0.82rem; margin-top: 8px; letter-spacing: 3px; font-weight: 400; text-transform: uppercase; }
-.splash-loader { width: 130px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 4px; margin-top: 40px; overflow: hidden; }
+.splash-loader { width: 130px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 4px; margin: 40px auto 0; overflow: hidden; }
 .splash-loader-bar { height: 100%; width: 0; background: var(--mint); border-radius: 4px; animation: splashLoad 2.5s ease-in-out forwards; }
 @keyframes splashLoad { to { width: 100%; } }
 .splash-dots { position: absolute; bottom: 36px; display: flex; gap: 6px; }

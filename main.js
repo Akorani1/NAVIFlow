@@ -1,41 +1,72 @@
 // ==================== NAVIFLOW PROTOTYPE ====================
 // Navigation, data rendering, charts, and interactions
 
-// ==================== API ====================
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? ''
-  : '';
+import { db } from './supabase.js';
 
-async function loadDataFromAPI() {
-  try {
-    const [dashRes, leadsRes, invRes, recRes] = await Promise.all([
-      fetch(`${BASE_URL}/api/dashboard`),
-      fetch(`${BASE_URL}/api/leads`),
-      fetch(`${BASE_URL}/api/inventory`),
-      fetch(`${BASE_URL}/api/recovery`),
-    ]);
+// ==================== SUPABASE DATA LOADER ====================
+async function loadDataFromSupabase() {
+    try {
+        const [leads, inventory, recovery, stats, txns] = await Promise.all([
+            db.getLeads(),
+            db.getInventory(),
+            db.getRecovery(),
+            db.getRecoveryStats(),
+            db.getTransactions(),
+        ]);
 
-    if (dashRes.ok) {
-      const dash = await dashRes.json();
-      if (dash.speedGuard) speedGuardLeads.splice(0, speedGuardLeads.length, ...dash.speedGuard);
+        if (leads?.length) {
+            leadsData.splice(0, leadsData.length, ...leads.map(r => ({
+                id: r.id, name: r.name, initials: r.initials, email: r.email,
+                phone: r.phone, role: r.role, status: r.status, tags: r.tags || [],
+                color: r.color, conversation: r.conversation || [],
+            })));
+        } else if (leads !== null) {
+            // Table exists but empty — seed with demo data
+            for (const lead of leadsData) await db.upsertLead(lead);
+        }
+
+        if (inventory?.length) {
+            inventoryData.splice(0, inventoryData.length, ...inventory.map(r => ({
+                id: r.id, name: r.name, sku: r.sku, price: r.price,
+                stock: r.stock, maxStock: r.max_stock, category: r.category,
+                gradient: r.gradient, icon: r.icon,
+            })));
+        } else if (inventory !== null) {
+            for (const p of inventoryData) await db.upsertProduct(p);
+        }
+
+        if (recovery?.length) {
+            recoveryData.splice(0, recoveryData.length, ...recovery.map(r => ({
+                id: r.id, name: r.name, initials: r.initials, value: r.value,
+                daysSince: r.days_since, dropReason: r.drop_reason,
+                reasonLabel: r.reason_label, status: r.status,
+                campaignType: r.campaign_type, color: r.color,
+                aiMessage: r.ai_message, aiAnalysis: r.ai_analysis,
+            })));
+        } else if (recovery !== null) {
+            for (const item of recoveryData) await db.upsertRecovery(item);
+        }
+
+        if (stats) {
+            recoveryStats.atRisk = stats.at_risk;
+            recoveryStats.recoveredThisWeek = stats.recovered_this_week;
+            recoveryStats.recoveryRate = stats.recovery_rate;
+            recoveryStats.pendingCount = stats.pending_count;
+            recoveryStats.totalRecovered = stats.total_recovered;
+        }
+
+        if (txns?.length) {
+            _supabaseTxns = txns;
+        }
+    } catch (e) {
+        console.warn('Supabase load failed, using demo data:', e.message);
     }
-    if (leadsRes.ok) {
-      const leads = await leadsRes.json();
-      leadsData.splice(0, leadsData.length, ...leads.data);
-    }
-    if (invRes.ok) {
-      const inv = await invRes.json();
-      inventoryData.splice(0, inventoryData.length, ...inv.data);
-    }
-    if (recRes.ok) {
-      const rec = await recRes.json();
-      recoveryData.splice(0, recoveryData.length, ...rec.data);
-      Object.assign(recoveryStats, rec.stats);
-    }
-  } catch (e) {
-    // Fall back to hardcoded demo data already in the arrays
-  }
 }
+
+let _supabaseTxns = [];
+
+// ==================== API (legacy fallback) ====================
+const BASE_URL = '';
 
 // ==================== DATA ====================
 let leadsData = [
@@ -191,7 +222,7 @@ function navigateTo(screenId, showNav = true) {
 // ==================== SPLASH SCREEN ====================
 function initSplash() {
     const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
-    Promise.all([minDelay, loadDataFromAPI()]).then(() => {
+    Promise.all([minDelay, loadDataFromSupabase()]).then(() => {
         navigateTo('screen-login', false);
     });
 }
@@ -203,13 +234,32 @@ function initLogin() {
     const btnGoogle = document.getElementById('btn-google');
     const linkSignup = document.getElementById('link-signup');
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const email = document.getElementById('login-email')?.value.trim();
+        const password = document.getElementById('login-password')?.value;
+        if (!email || !password) { showToast('Please enter email and password', 'error'); return; }
         btnLogin.textContent = 'Signing in...';
-        setTimeout(() => {
-            btnLogin.textContent = 'Sign In';
-            navigateTo('screen-dashboard');
-        }, 800);
+        btnLogin.disabled = true;
+        const { error } = await db.signIn(email, password);
+        if (error) {
+            if (error.message.includes('not configured')) {
+                // Demo mode — no Supabase configured, allow any login
+            } else if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('not found')) {
+                showToast('Invalid email or password', 'error');
+                btnLogin.textContent = 'Sign In';
+                btnLogin.disabled = false;
+                return;
+            } else {
+                showToast(error.message, 'error');
+                btnLogin.textContent = 'Sign In';
+                btnLogin.disabled = false;
+                return;
+            }
+        }
+        btnLogin.textContent = 'Sign In';
+        btnLogin.disabled = false;
+        navigateTo('screen-dashboard');
     });
 
     btnGoogle.addEventListener('click', () => {
@@ -220,8 +270,25 @@ function initLogin() {
         }, 800);
     });
 
-    linkSignup.addEventListener('click', (e) => {
+    linkSignup.addEventListener('click', async (e) => {
         e.preventDefault();
+        const email = document.getElementById('login-email')?.value.trim();
+        const password = document.getElementById('login-password')?.value;
+        if (!email || !password) {
+            showToast('Enter email and password to create account', 'error');
+            return;
+        }
+        const btn = document.getElementById('btn-login');
+        btn.textContent = 'Creating account...';
+        btn.disabled = true;
+        const { error } = await db.signUp(email, password);
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+        if (error && !error.message.includes('not configured')) {
+            showToast(error.message, 'error');
+            return;
+        }
+        showToast('Account created! Signing you in...');
         navigateTo('screen-dashboard');
     });
 }
@@ -614,6 +681,7 @@ function initLeads() {
                 status, tags: [category], color: colors[leadsData.length % colors.length], conversation: []
             };
             leadsData.unshift(newLead);
+            db.upsertLead(newLead);
             renderLeads(leadsData);
             closeActionSheet();
             showToast(`${name} added to leads`);
@@ -713,6 +781,7 @@ function showLeadDetail(lead) {
         const text = chatInput.value.trim();
         if (!text) return;
         lead.conversation.push({ sender: 'user', text, time: 'Just now' });
+        db.upsertLead(lead);
         renderConversation(lead);
         chatInput.value = '';
 
@@ -759,6 +828,7 @@ function simulateReply(lead) {
         const ind = document.getElementById('lead-typing-indicator');
         if (ind) ind.remove();
         lead.conversation.push({ sender: 'lead', text: "Thanks for reaching out! Let's schedule a call.", time: 'Just now' });
+        db.upsertLead(lead);
         renderConversation(lead);
     }, 2000);
 }
@@ -1744,6 +1814,7 @@ function renderRecoveryOpportunities(data = recoveryData) {
 
                 setTimeout(() => {
                     opp.status = 'recovering';
+                    db.upsertRecovery(opp);
                     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Sent!';
                     btn.style.opacity = '1';
                     btn.disabled = true;
@@ -1759,6 +1830,8 @@ function renderRecoveryOpportunities(data = recoveryData) {
                         recoveryStats.recoveredThisWeek += opp.value;
                         recoveryStats.atRisk = Math.max(0, recoveryStats.atRisk - opp.value);
                         recoveryStats.pendingCount = Math.max(0, recoveryStats.pendingCount - 1);
+                        db.upsertRecovery(opp);
+                        db.saveRecoveryStats(recoveryStats);
                         if (statusEl) { statusEl.className = 'lost-opp-status rec-status-recovered'; statusEl.textContent = 'Recovered'; }
                         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg> Recovered';
                         btn.classList.add('btn-recovered');
@@ -1954,10 +2027,12 @@ function initPOS() {
 
             setTimeout(() => {
                 const newId = inventoryData.length > 0 ? Math.max(...inventoryData.map(p => p.id)) + 1 : 1;
-                inventoryData.unshift({
+                const newProduct = {
                     id: newId, name, sku, price, stock, maxStock: stock < 50 ? 50 : stock * 2, category: category.toLowerCase(),
                     gradient: 'linear-gradient(135deg, #45B29D, #2F6FA3)', icon: 'package'
-                });
+                };
+                inventoryData.unshift(newProduct);
+                db.upsertProduct(newProduct);
 
                 addSubmit.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> Added!';
                 addSubmit.classList.add('success');
@@ -2021,6 +2096,8 @@ function initPOS() {
             product.stock -= qty;
             const total = (product.price * qty).toFixed(2);
             const orderNum = 'NF-' + Math.floor(1900 + Math.random() * 100);
+            db.upsertProduct(product);
+            db.addTransaction({ productName: product.name, quantity: qty, total: parseFloat(total), paymentMethod: 'POS' });
 
             btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> Sale Complete!';
             btn.classList.add('success');
@@ -2103,7 +2180,7 @@ function renderProducts(products) {
             `);
             document.getElementById('as-confirm-delete').addEventListener('click', () => {
                 const idx = inventoryData.findIndex(p => p.id === id);
-                if (idx !== -1) inventoryData.splice(idx, 1);
+                if (idx !== -1) { inventoryData.splice(idx, 1); db.deleteProduct(id); }
                 renderProducts(inventoryData);
                 populateSaleDropdown();
                 drawStockChart();
@@ -2138,6 +2215,7 @@ function renderProducts(products) {
                 p.price = parseFloat(document.getElementById('as-edit-price').value) || p.price;
                 p.stock = parseInt(document.getElementById('as-edit-stock').value) || 0;
                 p.maxStock = parseInt(document.getElementById('as-edit-maxstock').value) || p.maxStock;
+                db.upsertProduct(p);
                 renderProducts(inventoryData);
                 populateSaleDropdown();
                 drawStockChart();
