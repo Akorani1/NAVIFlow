@@ -255,6 +255,19 @@ function initSplash() {
 }
 
 // ==================== LOGIN ====================
+function initPasswordToggles() {
+    document.querySelectorAll('.pw-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
+            btn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
+        });
+    });
+}
+
 function initLogin() {
     const form = document.getElementById('login-form');
     const btnLogin = document.getElementById('btn-login');
@@ -1533,6 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSplash();
     initLogin();
     initSignup();
+    initPasswordToggles();
     initDashboard();
     initLeads();
     initAutomations();
