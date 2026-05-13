@@ -162,7 +162,7 @@ function navigateTo(screenId, showNav = true) {
     const nav = document.getElementById('bottom-nav');
     const sidebar = document.getElementById('desktop-sidebar');
     const fab = document.getElementById('ai-chat-fab');
-    const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login';
+    const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login' && screenId !== 'screen-signup';
     const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-recovery', 'screen-settings'];
 
     if (showNav && navScreens.includes(screenId)) {
@@ -270,25 +270,53 @@ function initLogin() {
         }, 800);
     });
 
-    linkSignup.addEventListener('click', async (e) => {
+    linkSignup.addEventListener('click', (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email')?.value.trim();
-        const password = document.getElementById('login-password')?.value;
-        if (!email || !password) {
-            showToast('Enter email and password to create account', 'error');
-            return;
-        }
-        const btn = document.getElementById('btn-login');
-        btn.textContent = 'Creating account...';
-        btn.disabled = true;
+        navigateTo('screen-signup', false);
+    });
+}
+
+// ==================== SIGNUP ====================
+function initSignup() {
+    const form = document.getElementById('signup-form');
+    const btnSignup = document.getElementById('btn-signup');
+    const linkLogin = document.getElementById('link-login');
+
+    if (linkLogin) {
+        linkLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo('screen-login', false);
+        });
+    }
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('signup-name')?.value.trim();
+        const email = document.getElementById('signup-email')?.value.trim();
+        const password = document.getElementById('signup-password')?.value;
+        const confirm = document.getElementById('signup-confirm')?.value;
+
+        if (!name) { showToast('Please enter your full name', 'error'); return; }
+        if (!email) { showToast('Please enter your email', 'error'); return; }
+        if (!password || password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+        if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
+
+        btnSignup.textContent = 'Creating account...';
+        btnSignup.disabled = true;
+
         const { error } = await db.signUp(email, password);
-        btn.textContent = 'Sign In';
-        btn.disabled = false;
+
+        btnSignup.textContent = 'Create Account';
+        btnSignup.disabled = false;
+
         if (error && !error.message.includes('not configured')) {
             showToast(error.message, 'error');
             return;
         }
-        showToast('Account created! Signing you in...');
+
+        showToast(`Welcome, ${name}! Account created.`, 'success');
         navigateTo('screen-dashboard');
     });
 }
@@ -1439,6 +1467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScreens();
     initSplash();
     initLogin();
+    initSignup();
     initDashboard();
     initLeads();
     initAutomations();
