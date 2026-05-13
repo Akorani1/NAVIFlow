@@ -175,6 +175,24 @@ ul { list-style: none; }
 .login-divider span { background: var(--white); padding: 0 14px; color: var(--gray-400); font-size: 0.73rem; position: relative; z-index: 1; }
 .login-footer { text-align: center; margin-top: 16px; font-size: 0.8rem; color: var(--gray-400); }
 .login-footer a { font-weight: 600; color: var(--teal); }
+
+/* ========== WELCOME SCREEN ========== */
+.welcome-bg { height: 100%; background: var(--gradient); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.welcome-circles { position: absolute; inset: 0; pointer-events: none; }
+.welcome-circles div { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); }
+.wc-1 { width: 360px; height: 360px; top: -80px; right: -100px; animation: floatCircle 7s ease-in-out infinite; }
+.wc-2 { width: 220px; height: 220px; bottom: -70px; left: -60px; animation: floatCircle 5s ease-in-out infinite 1.5s; }
+.wc-3 { width: 130px; height: 130px; top: 35%; left: 8%; background: rgba(255,255,255,0.04); animation: floatCircle 4s ease-in-out infinite 0.8s; }
+.welcome-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 28px; gap: 14px; animation: fadeUp 0.6s ease-out; }
+.welcome-avatar { width: 88px; height: 88px; border-radius: 50%; background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.35); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); margin-bottom: 4px; }
+.welcome-initials { font-size: 1.8rem; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.welcome-title { font-size: 1.8rem; font-weight: 800; color: #fff; margin: 0; line-height: 1.2; }
+.welcome-title .welcome-name { color: var(--mint); }
+.welcome-sub { font-size: 0.88rem; color: rgba(255,255,255,0.65); margin: 0 0 10px; }
+.btn-enter-dashboard { display: flex; align-items: center; gap: 10px; background: #fff; color: var(--navy); font-size: 1rem; font-weight: 700; padding: 16px 40px; border-radius: 50px; border: none; box-shadow: 0 6px 28px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.btn-enter-dashboard:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(0,0,0,0.25); }
+.btn-enter-dashboard:active { transform: scale(0.97); }
+
 .btn-logout { width: 100%; padding: 13px; border-radius: var(--radius-sm); border: 1.5px solid rgba(239,68,68,0.3); color: var(--danger); font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; transition: var(--transition); }
 .btn-logout svg { width: 16px; height: 16px; }
 .btn-logout:hover { background: #fef2f2; border-color: var(--danger); }

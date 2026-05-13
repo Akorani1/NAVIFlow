@@ -168,7 +168,7 @@ function navigateTo(screenId, showNav = true) {
     const nav = document.getElementById('bottom-nav');
     const sidebar = document.getElementById('desktop-sidebar');
     const fab = document.getElementById('ai-chat-fab');
-    const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login' && screenId !== 'screen-signup';
+    const isAuthScreen = screenId !== 'screen-splash' && screenId !== 'screen-login' && screenId !== 'screen-signup' && screenId !== 'screen-welcome';
     const navScreens = ['screen-dashboard', 'screen-leads', 'screen-pos', 'screen-recovery', 'screen-settings'];
 
     if (showNav && navScreens.includes(screenId)) {
@@ -246,6 +246,12 @@ function setUserProfile(name, email) {
     document.querySelectorAll('.avatar-circle').forEach(el => el.textContent = initials);
     document.querySelectorAll('.settings-avatar').forEach(el => el.textContent = initials);
 
+    // Welcome screen
+    const welcomeName = document.querySelector('.welcome-name');
+    const welcomeInitials = document.querySelector('.welcome-initials');
+    if (welcomeName) welcomeName.textContent = firstName;
+    if (welcomeInitials) welcomeInitials.textContent = initials;
+
     const settingsName = document.querySelector('.settings-user-info h3');
     const settingsEmail = document.querySelector('.settings-user-info p');
     if (settingsName) settingsName.textContent = name;
@@ -316,7 +322,7 @@ function initLogin() {
             return;
         }
         setUserProfile(null, email);
-        navigateTo('screen-dashboard');
+        navigateTo('screen-welcome', false);
     });
 
     btnGoogle.addEventListener('click', async () => {
@@ -386,6 +392,12 @@ function initSignup() {
         showToast(`Welcome, ${name}! Account created.`, 'success');
         navigateTo('screen-dashboard');
     });
+}
+
+// ==================== WELCOME SCREEN ====================
+function initWelcome() {
+    const btn = document.getElementById('btn-enter-dashboard');
+    if (btn) btn.addEventListener('click', () => navigateTo('screen-dashboard'));
 }
 
 // ==================== DASHBOARD ====================
@@ -1548,20 +1560,23 @@ document.addEventListener('DOMContentLoaded', () => {
     initBackButtons();
     initPeriodButtons();
     initAIChatbot();
+    initWelcome();
     // Restore saved user profile (name shown after refresh)
     const savedName = localStorage.getItem('nf_user_name');
     const savedEmail = localStorage.getItem('nf_user_email');
     if (savedName) setUserProfile(savedName, savedEmail);
 
     // Handle Google OAuth redirect and session changes
-    // INITIAL_SESSION fires when onAuthStateChange is first called with any existing session
-    // SIGNED_IN fires for new sign-ins including OAuth redirects
     db.onAuthStateChange((event, session) => {
-        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        if (session?.user) {
             const email = session.user.email || '';
             const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || null;
             setUserProfile(name, email);
-            if (currentScreen !== 'screen-dashboard') {
+            if (event === 'SIGNED_IN') {
+                // New login → show welcome screen first
+                navigateTo('screen-welcome', false);
+            } else if (event === 'INITIAL_SESSION' && currentScreen !== 'screen-dashboard') {
+                // Returning visit with saved session → skip welcome, go straight to dashboard
                 navigateTo('screen-dashboard');
             }
         }
