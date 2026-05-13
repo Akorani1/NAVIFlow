@@ -21,8 +21,8 @@ async function loadDataFromSupabase() {
                 color: r.color, conversation: r.conversation || [],
             })));
         } else if (leads !== null) {
-            // Table exists but empty — seed with demo data
-            for (const lead of leadsData) await db.upsertLead(lead);
+            // Empty table — start fresh, no demo data
+            leadsData.splice(0, leadsData.length);
         }
 
         if (inventory?.length) {
@@ -32,7 +32,7 @@ async function loadDataFromSupabase() {
                 gradient: r.gradient, icon: r.icon,
             })));
         } else if (inventory !== null) {
-            for (const p of inventoryData) await db.upsertProduct(p);
+            inventoryData.splice(0, inventoryData.length);
         }
 
         if (recovery?.length) {
@@ -44,7 +44,7 @@ async function loadDataFromSupabase() {
                 aiMessage: r.ai_message, aiAnalysis: r.ai_analysis,
             })));
         } else if (recovery !== null) {
-            for (const item of recoveryData) await db.upsertRecovery(item);
+            recoveryData.splice(0, recoveryData.length);
         }
 
         if (stats) {
@@ -53,6 +53,12 @@ async function loadDataFromSupabase() {
             recoveryStats.recoveryRate = stats.recovery_rate;
             recoveryStats.pendingCount = stats.pending_count;
             recoveryStats.totalRecovered = stats.total_recovered;
+        } else {
+            recoveryStats.atRisk = 0;
+            recoveryStats.recoveredThisWeek = 0;
+            recoveryStats.recoveryRate = 0;
+            recoveryStats.pendingCount = 0;
+            recoveryStats.totalRecovered = 0;
         }
 
         if (txns?.length) {
