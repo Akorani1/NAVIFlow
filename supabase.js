@@ -142,11 +142,14 @@ export const db = {
         if (!supabase) return { error: { message: 'Supabase not configured' } };
         return await supabase.auth.signUp({ email, password });
     },
-    async signInWithGoogle() {
+    async getGoogleOAuthUrl() {
         if (!supabase) return { error: { message: 'Supabase not configured' } };
         return await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: {
+                redirectTo: window.location.origin,
+                skipBrowserRedirect: true,
+            },
         });
     },
     async signOut() {
