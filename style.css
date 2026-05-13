@@ -140,7 +140,7 @@ ul { list-style: none; }
 .login-subtitle { color: var(--gray-400); font-size: 0.8rem; margin-top: 4px; margin-bottom: 22px; }
 .input-group { margin-bottom: 14px; }
 .input-group label { font-size: 0.73rem; font-weight: 600; color: var(--dark); margin-bottom: 6px; display: block; letter-spacing: 0.2px; }
-.input-wrap { display: flex; align-items: center; background: var(--gray-100); border-radius: var(--radius-sm); padding: 0 14px; border: 1.5px solid transparent; transition: var(--transition); }
+.input-wrap { display: flex; align-items: center; background: var(--gray-100); border-radius: var(--radius-sm); padding: 0 14px; border: 1.5px solid #e5e7eb; transition: var(--transition); }
 .input-wrap:focus-within { border-color: var(--teal); background: var(--white); box-shadow: 0 0 0 3px rgba(69,178,157,0.1); }
 .input-icon { width: 17px; height: 17px; color: var(--gray-400); flex-shrink: 0; margin-right: 10px; }
 .input-wrap input { flex: 1; padding: 13px 0; font-size: 0.88rem; background: transparent; color: var(--dark); }
